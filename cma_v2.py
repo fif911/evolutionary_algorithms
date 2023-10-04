@@ -28,7 +28,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 
-def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
+def simulation(env, xm: np.ndarray, pure_fitness=False, verbose=False):
     """Run one episode and return the fitness
 
     pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
@@ -37,7 +37,7 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     f, p, e, t = env.play(pcont=xm)
     if pure_fitness:
         return f
-    if return_enemies:
+    if verbose:
         return p, e, t
 
     fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
@@ -53,7 +53,7 @@ def verify_solution(env, best_solution):
     for enemy in ENEMIES:
 
         env.update_parameter('enemies', [enemy])
-        p, e, t = simulation(env, best_solution, return_enemies=True)
+        p, e, t = simulation(env, best_solution, verbose=True)
         enemy_beaten = e == 0 and p > 0
         print(f"Enemy {enemy};\tPlayer Life: {p}, Enemy Life: {e}, in {t} seconds. \tWon: {enemy_beaten}")
         if enemy_beaten:
