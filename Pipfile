@@ -8,6 +8,8 @@ numpy = "*"
 pygame = "*"
 matplotlib = "*"
 pandas = "*"
+cma = "*"
+cmaes = "*"
 
 [dev-packages]
 

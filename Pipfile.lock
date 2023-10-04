@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "803be55707af941a4d3f5a9399e47d3804effa486121cf45f8cc44cec919fdfa"
+            "sha256": "cfbe894cebac9844635538dfd28f4296605a40f96bb77c07664b20320483d943"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -17,6 +17,23 @@
         ]
     },
     "default": {
+        "cma": {
+            "hashes": [
+                "sha256:5cc571b1e2068fcf1c538be36f8f3a870107456fed22ce81c1345a96329e61db",
+                "sha256:b748b8e03f4e7ae816157d7b9bb2fc6b1fb2fee1d5fd3399329b646bb75861ec"
+            ],
+            "index": "pypi",
+            "version": "==3.3.0"
+        },
+        "cmaes": {
+            "hashes": [
+                "sha256:48afc70df027114739872b50489ae6b32461c307b92d084a63c7090a9742faf9",
+                "sha256:72cea747ad37b1780b0eb6f3c098cee33907fafbf6690c0c02db1e010cab72f6"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7'",
+            "version": "==0.10.0"
+        },
         "contourpy": {
             "hashes": [
                 "sha256:059c3d2a94b930f4dafe8105bcdc1b21de99b30b51b5bce74c753686de858cb6",
