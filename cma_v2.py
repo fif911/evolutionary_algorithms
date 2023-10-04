@@ -16,8 +16,8 @@ from evoman.environment import Environment
 
 N_GENERATIONS = 30
 POP_SIZE = 50
-ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
-MODE = "test"  # train or test
+ENEMIES = [1, 2]
+MODE = "train"  # train or test
 
 n_hidden_neurons = 10
 
@@ -28,16 +28,16 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 
-def simulation(env, xm: np.ndarray, pure_fitness=False, verbose=False):
+def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     """Run one episode and return the fitness
 
     pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
-    verbose: if True, return the player life, enemy life and time
+    return_enemies: if True, return the player life, enemy life and time
     """
     f, p, e, t = env.play(pcont=xm)
     if pure_fitness:
         return f
-    if verbose:
+    if return_enemies:
         return p, e, t
 
     fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
@@ -50,10 +50,10 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, verbose=False):
 def verify_solution(env, best_solution):
     enemies_beaten = 0
     env.update_parameter("multiplemode", "no")
-    for enemy in ENEMIES:
 
+    for enemy in ENEMIES:
         env.update_parameter('enemies', [enemy])
-        p, e, t = simulation(env, best_solution, verbose=True)
+        p, e, t = simulation(env, best_solution, return_enemies=True)
         enemy_beaten = e == 0 and p > 0
         print(f"Enemy {enemy};\tPlayer Life: {p}, Enemy Life: {e}, in {t} seconds. \tWon: {enemy_beaten}")
         if enemy_beaten:
@@ -65,9 +65,9 @@ def solution_search(env):
     n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
 
     es = cma.CMAEvolutionStrategy(n_genes * [0], 0.8,
-                                  {'bounds': [-1, 1],
-                                   'popsize': POP_SIZE,
-                                   'maxiter': N_GENERATIONS})
+                                  inopts={'bounds': [-1, 1],
+                                          'popsize': POP_SIZE,
+                                          'maxiter': N_GENERATIONS})
 
     while not es.stop():
         print("Generation", es.countiter)
@@ -97,7 +97,7 @@ def solution_search(env):
 if __name__ == "__main__":
     env = Environment(experiment_name=experiment_name,
                       enemies=ENEMIES,
-                      multiplemode="yes",
+                      multiplemode="yes" if len(ENEMIES) > 1 else "no",
                       playermode="ai",
                       player_controller=player_controller(n_hidden_neurons),
                       enemymode="static",
