@@ -16,7 +16,7 @@ from evoman.environment import Environment
 
 N_GENERATIONS = 30
 POP_SIZE = 50
-ENEMIES = [1, 2]
+ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 MODE = "train"  # train or test
 
 n_hidden_neurons = 10
