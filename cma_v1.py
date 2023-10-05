@@ -41,6 +41,7 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
 
     return 1 / fitness
 
+
 def verify_solution(env, best_solution):
     enemies_beaten = 0
     env.update_parameter("multiplemode", "no")
@@ -104,6 +105,7 @@ def main():
             break
     # Enemies beaten?
     verify_solution(env, best_solution)
+
 
 if __name__ == "__main__":
     main()
