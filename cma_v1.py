@@ -18,9 +18,29 @@ experiment_name = 'cma_test'
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
-N_GENERATIONS = 30
+N_GENERATIONS = 100
 POP_SIZE = 50
 
+def norm(x, pfit_pop):
+    """Goal:
+        Normalize fitness.
+    ---------------------------------------------------------------------------------
+    Input:
+        x: Fitness value, float
+        pfit_pop: Population fitness, np.array
+    ---------------------------------------------------------------------------------
+    Output:
+        x_norm: Normalized fitness, float"""
+    # If not all the same
+    if (max(pfit_pop) - min(pfit_pop)) > 0:
+        x_norm = (x - min(pfit_pop)) / (max(pfit_pop) - min(pfit_pop))
+    else:
+        x_norm = 0
+
+    # If negative
+    if x_norm <= 0:
+        x_norm = 0.0000000001
+    return x_norm
 
 def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     """Run one episode and return the fitness
@@ -35,11 +55,11 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
         return p, e, t
 
     fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
+    # if fitness <= 0:
+    #     fitness = 0.00001
 
-    if fitness <= 0:
-        fitness = 0.00001
-
-    return 1 / fitness
+    # return 1 / fitness
+    return fitness
 
 def verify_solution(env, best_solution):
     enemies_beaten = 0
@@ -75,21 +95,28 @@ def main():
         ]
     )
 
-    optimizer = CMA(mean=np.zeros(N_GENES), sigma=1, population_size=POP_SIZE, bounds=bounds)
+    optimizer = CMA(mean=np.zeros(N_GENES), sigma=0.8, population_size=POP_SIZE, bounds=bounds)
     print(" g    f(x1,x2)     x1      x2  ")
     print("===  ==========  ======  ======")
 
     while True:
-        solutions = []
+        solutions_x, solutions_f = [], []
         print(f"Generation {optimizer.generation}")
         for _ in range(optimizer.population_size):
             xm = optimizer.ask()
             fitness = simulation(env, xm)
-            solutions.append((xm, fitness))
+            solutions_x.append(xm)
+            solutions_f.append(fitness)
+            #solutions.append((xm, fitness))
             # print(
             #     f"{optimizer.generation:3d}  {fitness:10.5f}"
             #     f"  {xm[0]:6.2f}  {xm[1]:6.2f}"
             # )
+        # Normalize fitness
+        solutions_f_norm = [norm(x, solutions_f) for x in solutions_f]
+        solutions_f_norm = [1 / x for x in solutions_f_norm]
+        solutions = [(x, f) for x, f in zip(solutions_x, solutions_f_norm)]
+
         optimizer.tell(solutions)
 
         if optimizer.should_stop() or optimizer.generation >= N_GENERATIONS:

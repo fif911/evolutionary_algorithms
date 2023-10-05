@@ -74,6 +74,7 @@ def get_warm_start_mgd(
     mean = mu[:, 0]
     Sigma = first_term + second_term - third_term
     det_sigma = np.linalg.det(Sigma)
+    print(Sigma)
     sigma = math.pow(det_sigma, 1.0 / 2.0 / dim)
     cov = Sigma / math.pow(det_sigma, 1.0 / dim)
     return mean, sigma, cov
