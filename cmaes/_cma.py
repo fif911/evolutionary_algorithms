@@ -74,14 +74,12 @@ class CMA:
         n_max_resampling: int = 100,
         seed: Optional[int] = None,
         population_size: Optional[int] = None,
-        cov: Optional[np.ndarray] = None,
-    ):
+        cov: Optional[np.ndarray] = None,):
+        
+        # ---- Assertion Statements
         assert sigma > 0, "sigma must be non-zero positive value"
-
-        assert np.all(
-            np.abs(mean) < _MEAN_MAX
-        ), f"Abs of all elements of mean vector must be less than {_MEAN_MAX}"
-
+        assert np.all(np.abs(mean) < _MEAN_MAX), f"Abs of all elements of mean vector must be less than {_MEAN_MAX}"
+        
         n_dim = len(mean)
         assert n_dim > 1, "The dimension of mean must be larger than 1"
 
@@ -89,30 +87,20 @@ class CMA:
             population_size = 4 + math.floor(3 * math.log(n_dim))  # (eq. 48)
         assert population_size > 0, "popsize must be non-zero positive value."
 
+        # ---- Get Initial Covariance Matrix
         mu = population_size // 2
 
         # (eq.49)
-        weights_prime = np.array(
-            [
-                math.log((population_size + 1) / 2) - math.log(i + 1)
-                for i in range(population_size)
-            ]
-        )
+        weights_prime = np.array([math.log((population_size + 1) / 2) - math.log(i + 1) for i in range(population_size)])
         mu_eff = (np.sum(weights_prime[:mu]) ** 2) / np.sum(weights_prime[:mu] ** 2)
-        mu_eff_minus = (np.sum(weights_prime[mu:]) ** 2) / np.sum(
-            weights_prime[mu:] ** 2
-        )
+        mu_eff_minus = (np.sum(weights_prime[mu:]) ** 2) / np.sum(weights_prime[mu:] ** 2)
 
-        # learning rate for the rank-one update
+        # Learning rate for the rank-one update
         alpha_cov = 2
         c1 = alpha_cov / ((n_dim + 1.3) ** 2 + mu_eff)
-        # learning rate for the rank-μ update
-        cmu = min(
-            1 - c1 - 1e-8,  # 1e-8 is for large popsize.
-            alpha_cov
-            * (mu_eff - 2 + 1 / mu_eff)
-            / ((n_dim + 2) ** 2 + alpha_cov * mu_eff / 2),
-        )
+        # Learning rate for the rank-μ update
+        cmu = min(1 - c1 - 1e-8,  # 1e-8 is for large popsize.
+            alpha_cov * (mu_eff - 2 + 1 / mu_eff) / ((n_dim + 2) ** 2 + alpha_cov * mu_eff / 2),)
         assert c1 <= 1 - cmu, "invalid learning rate for the rank-one update"
         assert cmu <= 1 - c1, "invalid learning rate for the rank-μ update"
 
@@ -125,21 +113,15 @@ class CMA:
         # (eq.53)
         positive_sum = np.sum(weights_prime[weights_prime > 0])
         negative_sum = np.sum(np.abs(weights_prime[weights_prime < 0]))
-        weights = np.where(
-            weights_prime >= 0,
-            1 / positive_sum * weights_prime,
-            min_alpha / negative_sum * weights_prime,
-        )
+        weights = np.where(weights_prime >= 0, 1 / positive_sum * weights_prime, min_alpha / negative_sum * weights_prime,)
         cm = 1  # (eq. 54)
 
-        # learning rate for the cumulation for the step-size control (eq.55)
+        # Learning rate for the cumulation for the step-size control (eq.55)
         c_sigma = (mu_eff + 2) / (n_dim + mu_eff + 5)
         d_sigma = 1 + 2 * max(0, math.sqrt((mu_eff - 1) / (n_dim + 1)) - 1) + c_sigma
-        assert (
-            c_sigma < 1
-        ), "invalid learning rate for cumulation for the step-size control"
+        assert (c_sigma < 1), "invalid learning rate for cumulation for the step-size control"
 
-        # learning rate for cumulation for the rank-one update (eq.56)
+        # Learning rate for cumulation for the rank-one update (eq.56)
         cc = (4 + mu_eff / n_dim) / (n_dim + 4 + 2 * mu_eff / n_dim)
         assert cc <= 1, "invalid learning rate for cumulation for the rank-one update"
 
@@ -156,16 +138,12 @@ class CMA:
         self._cm = cm
 
         # E||N(0, I)|| (p.28)
-        self._chi_n = math.sqrt(self._n_dim) * (
-            1.0 - (1.0 / (4.0 * self._n_dim)) + 1.0 / (21.0 * (self._n_dim**2))
-        )
-
+        self._chi_n = math.sqrt(self._n_dim) * (1.0 - (1.0 / (4.0 * self._n_dim)) + 1.0 / (21.0 * (self._n_dim**2)))
         self._weights = weights
 
-        # evolution path
+        # Evolution path
         self._p_sigma = np.zeros(n_dim)
         self._pc = np.zeros(n_dim)
-
         self._mean = mean.copy()
 
         if cov is None:
@@ -178,7 +156,7 @@ class CMA:
         self._D: Optional[np.ndarray] = None
         self._B: Optional[np.ndarray] = None
 
-        # bounds contains low and high of each parameter.
+        # Bounds contains low and high of each parameter.
         assert bounds is None or _is_valid_bounds(bounds, mean), "invalid bounds"
         self._bounds = bounds
         self._n_max_resampling = n_max_resampling

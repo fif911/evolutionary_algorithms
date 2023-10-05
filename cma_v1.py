@@ -36,7 +36,10 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
 
     fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
 
-    return - 1 / fitness
+    if fitness <= 0:
+        fitness = 0.00001
+
+    return 1 / fitness
 
 def verify_solution(env, best_solution):
     enemies_beaten = 0
