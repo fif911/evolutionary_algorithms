@@ -14,9 +14,9 @@ import numpy as np
 from demo_controller import player_controller
 from evoman.environment import Environment
 
-N_GENERATIONS = 30
+N_GENERATIONS = 50
 POP_SIZE = 50
-ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+ENEMIES = [6]
 MODE = "train"  # train or test
 
 n_hidden_neurons = 10
@@ -70,20 +70,21 @@ def solution_search(env):
                                           'maxiter': N_GENERATIONS})
 
     while not es.stop():
-        print("Generation", es.countiter)
         X = es.ask()  # get list of new solutions
         fit = [simulation(env, x) for x in X]  # evaluate each solution
+        print(
+            f"Generation {es.countiter}: Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
+            f"worst: {max(fit):.2f},\t std: {np.std(fit):.1f}")
+
+        # TODO: This is test mutation. Must be removed
+        # X = [x + np.random.normal(0, 0.1, len(x)) for x in X]
+        # X = [np.random.normal(0, 0, len(x)) for x in X]
+
         es.tell(X, fit)  # besides for termination only the ranking in fit is used
-        # es.disp()
     print('termination:', es.stop())
-    cma.s.pprint(es.best.__dict__)
 
     best_solution = es.best.x
-    print("Results")
-    print("Results pretty")
-    print(es.result_pretty())
     print("\n\n---- BEST ----")
-    # print(best_solution)
     print(f"Inverted best fitness: {es.best.f}")
     print(f"Inverted best fitness: {simulation(env, best_solution)}")
     print(f"Original best fitness: {simulation(env, best_solution, pure_fitness=True)}")
