@@ -21,19 +21,20 @@ ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 N_GENERATIONS = 100
 POP_SIZE = 50
 
-def norm(x, pfit_pop):
-    """Goal:
-        Normalize fitness.
-    ---------------------------------------------------------------------------------
+
+def norm(f: int, pfit_pop: list[float]):
+    """Normalize fitness f based on the population fitness pfit_pop
+
     Input:
         x: Fitness value, float
         pfit_pop: Population fitness, np.array
-    ---------------------------------------------------------------------------------
+
     Output:
-        x_norm: Normalized fitness, float"""
+        x_norm: Normalized fitness, float
+    """
     # If not all the same
     if (max(pfit_pop) - min(pfit_pop)) > 0:
-        x_norm = (x - min(pfit_pop)) / (max(pfit_pop) - min(pfit_pop))
+        x_norm = (f - min(pfit_pop)) / (max(pfit_pop) - min(pfit_pop))
     else:
         x_norm = 0
 
@@ -41,6 +42,7 @@ def norm(x, pfit_pop):
     if x_norm <= 0:
         x_norm = 0.0000000001
     return x_norm
+
 
 def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     """Run one episode and return the fitness
@@ -97,32 +99,30 @@ def main():
     )
 
     optimizer = CMA(mean=np.zeros(N_GENES), sigma=0.8, population_size=POP_SIZE, bounds=bounds)
-    print(" g    f(x1,x2)     x1      x2  ")
-    print("===  ==========  ======  ======")
 
     while True:
         solutions_x, solutions_f = [], []
-        print(f"Generation {optimizer.generation}")
         for _ in range(optimizer.population_size):
             xm = optimizer.ask()
             fitness = simulation(env, xm)
             solutions_x.append(xm)
             solutions_f.append(fitness)
-            #solutions.append((xm, fitness))
-            # print(
-            #     f"{optimizer.generation:3d}  {fitness:10.5f}"
-            #     f"  {xm[0]:6.2f}  {xm[1]:6.2f}"
-            # )
+
         # Normalize fitness
-        solutions_f_norm = [norm(x, solutions_f) for x in solutions_f]
+        solutions_f_norm = [norm(f, solutions_f) for f in solutions_f]
         solutions_f_norm = [1 / x for x in solutions_f_norm]
         solutions = [(x, f) for x, f in zip(solutions_x, solutions_f_norm)]
+
+        print(
+            f"Generation {optimizer.generation}: Best fitness: {min(solutions_f):.4f},\t "
+            f"mean: {np.mean(solutions_f):.4f},\t "
+            f"worst: {max(solutions_f):.2f},\t std: {np.std(solutions_f):.1f}")
 
         optimizer.tell(solutions)
 
         if optimizer.should_stop() or optimizer.generation >= N_GENERATIONS:
             print("Stop")
-            # search where the fitness is the highest and return the solution
+            # search where the fitness is the lowest and return the solution
             best_solution = solutions[np.argmin([s[1] for s in solutions])][0]
             print("Best solution: \n")
             print(best_solution)
@@ -135,5 +135,6 @@ def main():
 
 
 if __name__ == "__main__":
+    print("Starting...")
     main()
     print("Done!")
