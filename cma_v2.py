@@ -14,6 +14,8 @@ import numpy as np
 from demo_controller import player_controller
 from evoman.environment import Environment
 
+from utils import simulation, verify_solution
+
 N_GENERATIONS = 50
 POP_SIZE = 50
 ENEMIES = [6]
@@ -26,39 +28,6 @@ solution_file_name = 'cma_v2_best.txt'
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
-
-
-def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
-    """Run one episode and return the fitness
-
-    pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
-    return_enemies: if True, return the player life, enemy life and time
-    """
-    f, p, e, t = env.play(pcont=xm)
-    if pure_fitness:
-        return f
-    if return_enemies:
-        return p, e, t
-
-    fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
-    if fitness <= 0:
-        fitness = 0.00001
-
-    return 1 / fitness
-
-
-def verify_solution(env, best_solution):
-    enemies_beaten = 0
-    env.update_parameter("multiplemode", "no")
-
-    for enemy in ENEMIES:
-        env.update_parameter('enemies', [enemy])
-        p, e, t = simulation(env, best_solution, return_enemies=True)
-        enemy_beaten = e == 0 and p > 0
-        print(f"Enemy {enemy};\tPlayer Life: {p}, Enemy Life: {e}, in {t} seconds. \tWon: {enemy_beaten}")
-        if enemy_beaten:
-            enemies_beaten += 1
-    print(f"Enemies beaten: {enemies_beaten}/{len(ENEMIES)}")
 
 
 def solution_search(env):
@@ -86,8 +55,8 @@ def solution_search(env):
     best_solution = es.best.x
     print("\n\n---- BEST ----")
     print(f"Inverted best fitness: {es.best.f}")
-    print(f"Inverted best fitness: {simulation(env, best_solution)}")
-    print(f"Original best fitness: {simulation(env, best_solution, pure_fitness=True)}")
+    print(f"Inverted best fitness: {simulation(env, best_solution, inverted_fitness=True)}")
+    print(f"Original best fitness: {simulation(env, best_solution, inverted_fitness=False)}")
 
     # save best solution
     np.savetxt(f'{experiment_name}/{solution_file_name}', best_solution)

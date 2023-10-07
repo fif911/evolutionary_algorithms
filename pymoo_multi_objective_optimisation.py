@@ -15,6 +15,8 @@ import pymoo.gradient.toolbox as anp
 from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
+from utils import simulation, verify_solution
+
 N_GENERATIONS = 50
 POP_SIZE = 100
 ENEMIES = [6, 2, 5, 7, 8]
@@ -40,26 +42,6 @@ env = Environment(experiment_name=experiment_name,
                   visuals=False)
 
 
-def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
-    """Run one episode and return the fitness
-
-    pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
-    return_enemies: if True, return the player life, enemy life and time
-    """
-    f, p, e, t = env.play(pcont=xm)
-    if pure_fitness:
-        return f
-    if return_enemies:
-        return p, e, t
-
-    fitness = 0.9 * (100 - e) + 0.1 * p - np.log(t)
-
-    if fitness <= 0:
-        fitness = 0.00001
-
-    return 1 / fitness
-
-
 class objectives(Problem):
 
     def __init__(self):
@@ -73,7 +55,7 @@ class objectives(Problem):
             env.update_parameter('enemies', [enemy])
             dict_enemies[enemy] = []
             for i in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(env, x[i, :]))
+                dict_enemies[enemy].append(simulation(env, x[i, :], inverted_fitness=True))
         # Stack fitness
         dict_enemies[2578] = []  # , dict_enemies[4] = [], []
         for i in range(POP_SIZE):
@@ -124,13 +106,6 @@ print(res.F)
 for i, x in enumerate(res.X):
     print("***************************")
     print("Point: ", i)
-    for enemy in np.arange(1, 9):
-        print("Fighting enemy: ", enemy)
-        env.update_parameter('enemies', [enemy])
-        p, e, t = simulation(env, x, return_enemies=True)
-        if p > 0:
-            print("\tWon")
-        else:
-            print("\tLost")
+    verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
 Scatter().add(res.F, facecolor="none", edgecolor="red").show()
