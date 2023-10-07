@@ -77,8 +77,8 @@ class objectives(Problem):
             # Stack fitness
             dict_enemies[2578], dict_enemies[13] = [], []
             for i in range(POP_SIZE):
-                dict_enemies[2578].append(min([dict_enemies[j][i] for j in [2, 5, 7, 8]])) # Temporarily
-                dict_enemies[13].append(min([dict_enemies[j][i] for j in [1, 3]])) # Temporarily
+                dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]])) # Temporarily
+                dict_enemies[13].append(max([dict_enemies[j][i] for j in [1, 3]])) # Temporarily
 
             
             out["F"] = anp.column_stack([dict_enemies[13], dict_enemies[2578]])
