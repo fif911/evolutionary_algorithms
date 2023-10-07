@@ -16,9 +16,9 @@ from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
 
-N_GENERATIONS = 100
-POP_SIZE = 20
-ENEMIES = [1, 2, 3, 5, 7, 8]
+N_GENERATIONS = 50
+POP_SIZE = 100
+ENEMIES = [6, 2, 5, 7, 8]
 MODE = "train"  # train or test
 
 n_hidden_neurons = 10
@@ -75,14 +75,13 @@ class objectives(Problem):
                 for i in range(POP_SIZE):
                     dict_enemies[enemy].append(simulation(env, x[i,:]))
             # Stack fitness
-            dict_enemies[2578], dict_enemies[13] = [], []
+            dict_enemies[2578] = []#, dict_enemies[4] = [], []
             for i in range(POP_SIZE):
                 dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]])) # Temporarily
-                dict_enemies[13].append(max([dict_enemies[j][i] for j in [1, 3]])) # Temporarily
+                #dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
 
             
-            out["F"] = anp.column_stack([dict_enemies[13], dict_enemies[2578]])
-            
+            out["F"] = anp.column_stack([dict_enemies[6], dict_enemies[2578]])
 
 
 problem = objectives()
@@ -114,6 +113,7 @@ while algorithm.has_next():
 
     # do same more things, printing, logging, storing or even modifying the algorithm object
     print(algorithm.n_gen, algorithm.evaluator.n_eval)
+    print(1 / algorithm.result().F)
 
 # obtain the result objective from the algorithm
 res = algorithm.result()
@@ -123,7 +123,9 @@ print("hash", res.F.sum())
 res.F = 1 / res.F
 print(res.F)
 
-for x in res.X:
+for i, x in enumerate(res.X):
+    print("***************************")
+    print("Point: ", i)
     for enemy in np.arange(1, 9):
         print("Fighting enemy: ", enemy)
         env.update_parameter('enemies', [enemy])
