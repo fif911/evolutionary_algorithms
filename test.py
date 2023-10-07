@@ -16,9 +16,9 @@ from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
 
-N_GENERATIONS = 1000
+N_GENERATIONS = 100
 POP_SIZE = 20
-ENEMIES = [1, 2, 5, 7, 8]
+ENEMIES = [1, 2, 3, 5, 7, 8]
 MODE = "train"  # train or test
 
 n_hidden_neurons = 10
@@ -75,11 +75,13 @@ class objectives(Problem):
                 for i in range(POP_SIZE):
                     dict_enemies[enemy].append(simulation(env, x[i,:]))
             # Stack fitness
-            dict_enemies[2578] = []
+            dict_enemies[2578], dict_enemies[13] = [], []
             for i in range(POP_SIZE):
                 dict_enemies[2578].append(min([dict_enemies[j][i] for j in [2, 5, 7, 8]])) # Temporarily
+                dict_enemies[13].append(min([dict_enemies[j][i] for j in [1, 3]])) # Temporarily
+
             
-            out["F"] = anp.column_stack([dict_enemies[1], dict_enemies[2578]])
+            out["F"] = anp.column_stack([dict_enemies[13], dict_enemies[2578]])
             
 
 
@@ -120,5 +122,16 @@ print("hash", res.F.sum())
 
 res.F = 1 / res.F
 print(res.F)
+
+for x in res.X:
+    for enemy in np.arange(1, 9):
+        print("Fighting enemy: ", enemy)
+        env.update_parameter('enemies', [enemy])
+        p, e, t = simulation(env, x, return_enemies = True)
+        if p > 0:
+            print("\tWon")
+        else:
+            print("\tLost")
+        
 
 Scatter().add(res.F, facecolor="none", edgecolor="red").show()
