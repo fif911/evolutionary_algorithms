@@ -15,7 +15,6 @@ import pymoo.gradient.toolbox as anp
 from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
-
 N_GENERATIONS = 50
 POP_SIZE = 100
 ENEMIES = [6, 2, 5, 7, 8]
@@ -30,15 +29,15 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 env = Environment(experiment_name=experiment_name,
-                    enemies=ENEMIES,
-                    multiplemode= "no",
-                    playermode="ai",
-                    player_controller=player_controller(n_hidden_neurons),
-                    enemymode="static",
-                    level=2,
-                    speed="fastest",
-                    logs="off",
-                    visuals=False)
+                  enemies=ENEMIES,
+                  multiplemode="no",
+                  playermode="ai",
+                  player_controller=player_controller(n_hidden_neurons),
+                  enemymode="static",
+                  level=2,
+                  speed="fastest",
+                  logs="off",
+                  visuals=False)
 
 
 def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
@@ -60,28 +59,28 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
 
     return 1 / fitness
 
-class objectives(Problem):
-    
-        def __init__(self):
-            super().__init__(n_var=265, n_obj=2, n_constr=0, xl=-1, xu=1, type_var=float)
-    
-        def _evaluate(self, x, out, *args, **kwargs):
-            # Initialize
-            dict_enemies = {}
-            # Get fitness for each enemy
-            for enemy in ENEMIES:
-                env.update_parameter('enemies', [enemy])
-                dict_enemies[enemy] = []
-                for i in range(POP_SIZE):
-                    dict_enemies[enemy].append(simulation(env, x[i,:]))
-            # Stack fitness
-            dict_enemies[2578] = []#, dict_enemies[4] = [], []
-            for i in range(POP_SIZE):
-                dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]])) # Temporarily
-                #dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
 
-            
-            out["F"] = anp.column_stack([dict_enemies[6], dict_enemies[2578]])
+class objectives(Problem):
+
+    def __init__(self):
+        super().__init__(n_var=265, n_obj=2, n_constr=0, xl=-1, xu=1, type_var=float)
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        # Initialize
+        dict_enemies = {}
+        # Get fitness for each enemy
+        for enemy in ENEMIES:
+            env.update_parameter('enemies', [enemy])
+            dict_enemies[enemy] = []
+            for i in range(POP_SIZE):
+                dict_enemies[enemy].append(simulation(env, x[i, :]))
+        # Stack fitness
+        dict_enemies[2578] = []  # , dict_enemies[4] = [], []
+        for i in range(POP_SIZE):
+            dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
+            # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
+
+        out["F"] = anp.column_stack([dict_enemies[6], dict_enemies[2578]])
 
 
 problem = objectives()
@@ -94,14 +93,13 @@ problem = objectives()
 #                     crossover=TwoPointCrossover(),
 #                     mutation=GaussianMutation(),
 #                     eliminate_duplicates=True)
-algorithm = SMSEMOA(pop_size = POP_SIZE)
+algorithm = SMSEMOA(pop_size=POP_SIZE)
 
 # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
 algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), seed=1, verbose=False)
 
 # until the algorithm has no terminated
 while algorithm.has_next():
-    
     # ask the algorithm for the next solution to be evaluated
     pop = algorithm.ask()
 
@@ -129,11 +127,10 @@ for i, x in enumerate(res.X):
     for enemy in np.arange(1, 9):
         print("Fighting enemy: ", enemy)
         env.update_parameter('enemies', [enemy])
-        p, e, t = simulation(env, x, return_enemies = True)
+        p, e, t = simulation(env, x, return_enemies=True)
         if p > 0:
             print("\tWon")
         else:
             print("\tLost")
-        
 
 Scatter().add(res.F, facecolor="none", edgecolor="red").show()
