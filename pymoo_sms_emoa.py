@@ -69,8 +69,10 @@ class objectives(Problem):
         objectives_fitness = {
             # TODO: check correctness
             "objective_1": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in range(POP_SIZE)],
-            "objective_2": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in range(POP_SIZE)],
-            "objective_3": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in range(POP_SIZE)],
+            "objective_2": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+                            range(POP_SIZE)],
+            "objective_3": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
+                            range(POP_SIZE)],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -78,6 +80,29 @@ class objectives(Problem):
         # for i in range(POP_SIZE):
         #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
         #     # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
+
+
+def plot_pareto_fronts(res):
+    """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
+    plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
+    plot.add(res.F, color="red")
+    plot.show()
+
+    # for 3 objectives plot each pair of pareto fronts
+    # Hard vs Medium
+    plot = Scatter(labels=["Hard enemies", "Medium Enemies"], title="Pareto Front")
+    plot.add(res.F[:, 0, 1], color="red")
+    plot.show()
+
+    # Hard vs Easy
+    plot = Scatter(labels=["Hard enemies", "Easy Enemies"], title="Pareto Front")
+    plot.add(res.F[:, [0, 2]], color="red")
+    plot.show()
+
+    # Medium vs Easy
+    plot = Scatter(labels=["Medium enemies", "Easy Enemies"], title="Pareto Front")
+    plot.add(res.F[:, 1, 2], color="red")
+    plot.show()
 
 
 def main(env: Environment, n_genes: int):
@@ -116,12 +141,7 @@ def main(env: Environment, n_genes: int):
         print(f"------ Solution {i + 1} -----")
         verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
-    # Scatter().add(res.F, facecolor="none", edgecolor="red").show()
-
-    plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
-    # plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
-    plot.add(res.F, color="red")
-    plot.show()
+    plot_pareto_fronts(res)
 
 
 if __name__ == '__main__':
