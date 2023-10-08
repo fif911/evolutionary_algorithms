@@ -11,10 +11,7 @@ import time
 import cma
 import numpy as np
 
-from demo_controller import player_controller
-from evoman.environment import Environment
-
-from utils import simulation, verify_solution
+from utils import simulation, verify_solution, init_env
 
 N_GENERATIONS = 50
 POP_SIZE = 50
@@ -30,9 +27,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 
-def solution_search(env):
-    n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
-
+def solution_search(env, n_genes):
     es = cma.CMAEvolutionStrategy(n_genes * [0], 0.8,
                                   inopts={'bounds': [-1, 1],
                                           'popsize': POP_SIZE,
@@ -65,20 +60,11 @@ def solution_search(env):
 
 
 if __name__ == "__main__":
-    env = Environment(experiment_name=experiment_name,
-                      enemies=ENEMIES,
-                      multiplemode="yes" if len(ENEMIES) > 1 else "no",
-                      playermode="ai",
-                      player_controller=player_controller(n_hidden_neurons),
-                      enemymode="static",
-                      level=2,
-                      speed="fastest",
-                      logs="off",
-                      visuals=False)
+    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
 
     if MODE == "train":
         time_start = time.time()
-        solution_search(env)
+        solution_search(env, n_genes)
         print("Done!")
         # time in minutes
         print(f"Total time: {(time.time() - time_start) / 60:.2f} minutes")
