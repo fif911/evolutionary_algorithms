@@ -10,13 +10,14 @@ import time
 
 import cma
 import numpy as np
+import matplotlib.pyplot as plt
 
 from demo_controller import player_controller
 from evoman.environment import Environment
 
-N_GENERATIONS = 50
+N_GENERATIONS = 10
 POP_SIZE = 50
-ENEMIES = [6]
+ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 MODE = "train"  # train or test
 
 n_hidden_neurons = 10
@@ -34,7 +35,10 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
     return_enemies: if True, return the player life, enemy life and time
     """
-    f, p, e, t = env.play(pcont=xm)
+    if not return_enemies:
+        f, p, e, t, n_enemies = env.play(pcont=xm)
+    else:
+        f, p, e, t = env.play(pcont=xm)
     if pure_fitness:
         return f
     if return_enemies:
@@ -44,7 +48,7 @@ def simulation(env, xm: np.ndarray, pure_fitness=False, return_enemies=False):
     if fitness <= 0:
         fitness = 0.00001
 
-    return 1 / fitness
+    return 1 / fitness, n_enemies
 
 
 def verify_solution(env, best_solution):
@@ -70,17 +74,26 @@ def solution_search(env):
                                           'maxiter': N_GENERATIONS})
 
     while not es.stop():
-        X = es.ask()  # get list of new solutions
-        fit = [simulation(env, x) for x in X]  # evaluate each solution
-        print(
-            f"Generation {es.countiter}: Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
-            f"worst: {max(fit):.2f},\t std: {np.std(fit):.1f}")
-
+        X = es.ask()  # Get list of new solutions
+        # Initialize fitness and n_enemies lists
+        fit, n_enemies = [], []
+        # Evaluate each solution in X
+        for x in X:
+            ft, nen = simulation(env, x)  # evaluate each solution
+            fit.append(ft)
+            n_enemies.append(nen)
+        # print(
+        #     f"Generation {es.countiter}: Best fitness: {1 / min(fit):.4f},\t mean: {1 / np.mean(fit):.4f},\t "
+        #     f"worst: {max(fit):.2f},\t std: {np.std(fit):.1f},\t n enemies: {max(n_enemies)}")
         # TODO: This is test mutation. Must be removed
         # X = [x + np.random.normal(0, 0.1, len(x)) for x in X]
         # X = [np.random.normal(0, 0, len(x)) for x in X]
 
         es.tell(X, fit)  # besides for termination only the ranking in fit is used
+        print("Best fitness: ", 1 / es.best.f)
+        print("Enemies current generation: ", max(n_enemies))
+        es.logger.add()  # write data to disc to be plotted
+        es.disp()
     print('termination:', es.stop())
 
     best_solution = es.best.x
@@ -93,6 +106,10 @@ def solution_search(env):
     np.savetxt(f'{experiment_name}/{solution_file_name}', best_solution)
 
     verify_solution(env, best_solution)
+
+    es.result_pretty()
+    cma.plot()
+    plt.show()
 
 
 if __name__ == "__main__":
