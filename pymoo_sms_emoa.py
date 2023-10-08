@@ -18,8 +18,8 @@ from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 3
-POP_SIZE = 20
+N_GENERATIONS = 50
+POP_SIZE = 100
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
