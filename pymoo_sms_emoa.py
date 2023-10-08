@@ -8,6 +8,7 @@ Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 """
 import os
+import time
 
 import numpy as np
 import pymoo.gradient.toolbox as anp
@@ -137,18 +138,31 @@ def main(env: Environment, n_genes: int):
     res.F = 1 / res.F
     print(res.F)
 
+    max_enemies_beaten = 0
+    best_solutions = []
     for i, x in enumerate(res.X):
         print(f"------ Solution {i + 1} -----")
-        verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
+        enemies_beaten = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
+        if enemies_beaten > max_enemies_beaten:
+            max_enemies_beaten = enemies_beaten
+            best_solutions = [x]  # reset the list because we found a better performing solution
+        elif enemies_beaten == max_enemies_beaten:
+            best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
+
+    # save the best solutions to files
+    for i, solution in enumerate(best_solutions):
+        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
     plot_pareto_fronts(res)
 
 
 if __name__ == '__main__':
+    time_start = time.time()
     print("Running pymoo_sms_emoa.py")
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
     main(env, n_genes)
 
+    print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
