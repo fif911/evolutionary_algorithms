@@ -1,6 +1,9 @@
 from typing import Optional
 
 import numpy as np
+from evoman.environment import Environment
+
+from demo_controller import player_controller
 
 
 def simulation(env, xm: np.ndarray, inverted_fitness=True, verbose=False):
@@ -40,3 +43,19 @@ def verify_solution(env, best_solution, enemies: Optional[list[int]] = None):
         if enemy_beaten:
             enemies_beaten += 1
     print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
+
+
+def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
+    env = Environment(experiment_name=experiment_name,
+                      enemies=enemies,
+                      multiplemode="yes" if len(enemies) > 1 else "no",
+                      playermode="ai",
+                      player_controller=player_controller(n_hidden_neurons),
+                      enemymode="static",
+                      level=2,
+                      speed="fastest",
+                      logs="off",
+                      visuals=False)
+    n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
+    print(f"Number of genes: {n_genes}")
+    return env, n_genes
