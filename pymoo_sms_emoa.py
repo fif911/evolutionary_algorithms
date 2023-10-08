@@ -6,6 +6,7 @@ Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 """
 import os
 
+import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
@@ -37,22 +38,28 @@ class objectives(Problem):
         self.enemies = enemies
         super().__init__(n_var=n_genes, n_obj=n_objectives, xl=-1, xu=1, type_var=float)
 
-    def _evaluate(self, x, out, *args, **kwargs):
+    def _evaluate(self, x: list[np.array], out, *args, **kwargs):
+        """Evaluate the fitness of each individual in the population
+
+        x - list of individuals in the population
+        out - dictionary with the fitness outputs
+        """
+
         # Initialize
         dict_enemies = {}
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
             dict_enemies[enemy] = []
-            for i in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[i, :], inverted_fitness=True))
+            for individual_id in range(POP_SIZE):
+                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_1": dict_enemies[6],
             "objective_2": [max([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)]
         }
         assert len(objectives_fitness.keys()) == self.n_obj  # assert we return the correct number of objectives
-        out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
+        out["F"] = anp.column_stack([objectives_fitness["objective_1"], objectives_fitness["objective_2"]])
         # dict_enemies[2578] = []  # , dict_enemies[4] = [], []
         # for i in range(POP_SIZE):
         #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
