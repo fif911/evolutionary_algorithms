@@ -19,8 +19,8 @@ from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 50
-POP_SIZE = 100
+N_GENERATIONS = 200
+POP_SIZE = 500
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -68,10 +68,11 @@ class objectives(Problem):
 
         # Return fitness outputs for enemies
         objectives_fitness = {
-            "objective_1": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in range(POP_SIZE)],
-            "objective_2": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+            "objective_1": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
                             range(POP_SIZE)],
-            "objective_3": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
+            "objective_2": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+                            range(POP_SIZE)],
+            "objective_3": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
                             range(POP_SIZE)],
         }
 
