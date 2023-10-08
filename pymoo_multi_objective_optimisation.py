@@ -1,20 +1,18 @@
-from demo_controller import player_controller
-from evoman.environment import Environment
-import numpy as np
+"""
+Implementation of multi-objective optimisation using pymoo
+
+Algorithm: SMS-EMOA
+Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+"""
 import os
-import pymoo
 
-from pymoo.algorithms.moo.age import AGEMOEA
-from pymoo.algorithms.moo.sms import SMSEMOA
-from pymoo.operators.crossover.pntx import TwoPointCrossover
-from pymoo.operators.mutation.gauss import GaussianMutation
-from pymoo.operators.sampling.rnd import random_by_bounds
-
-from pymoo.core.problem import Problem
 import pymoo.gradient.toolbox as anp
-from pymoo.optimize import minimize
+from evoman.environment import Environment
+from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.core.problem import Problem
 from pymoo.visualization.scatter import Scatter
 
+from demo_controller import player_controller
 from utils import simulation, verify_solution
 
 N_GENERATIONS = 50
@@ -65,47 +63,45 @@ class objectives(Problem):
         out["F"] = anp.column_stack([dict_enemies[6], dict_enemies[2578]])
 
 
-problem = objectives()
-# from pymoo.problems import get_problem
-# problem = get_problem("zdt5")
+if __name__ == '__main__':
+    problem = objectives()
 
+    algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 
-# algorithm = AGEMOEA(pop_size = POP_SIZE,
-#                     sampling=random_by_bounds(n_var = 265, xl = -1, xu = 1, n_samples=POP_SIZE),
-#                     crossover=TwoPointCrossover(),
-#                     mutation=GaussianMutation(),
-#                     eliminate_duplicates=True)
-algorithm = SMSEMOA(pop_size=POP_SIZE)
+    # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
+    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
-# prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
-algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), seed=1, verbose=False)
+    # until the algorithm has no terminated
+    while algorithm.has_next():
+        # ask the algorithm for the next solution to be evaluated
+        pop = algorithm.ask()
 
-# until the algorithm has no terminated
-while algorithm.has_next():
-    # ask the algorithm for the next solution to be evaluated
-    pop = algorithm.ask()
+        # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
+        algorithm.evaluator.eval(problem, pop)
 
-    # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
-    algorithm.evaluator.eval(problem, pop)
+        # returned the evaluated individuals which have been evaluated or even modified
+        algorithm.tell(infills=pop)
 
-    # returned the evaluated individuals which have been evaluated or even modified
-    algorithm.tell(infills=pop)
+        # do same more things, printing, logging, storing or even modifying the algorithm object
+        print(algorithm.n_gen, algorithm.evaluator.n_eval)
+        print(1 / algorithm.result().F)
 
-    # do same more things, printing, logging, storing or even modifying the algorithm object
-    print(algorithm.n_gen, algorithm.evaluator.n_eval)
-    print(1 / algorithm.result().F)
+    # obtain the result objective from the algorithm
+    res = algorithm.result()
+    # calculate a hash to show that all executions end with the same result
+    print("hash", res.F.sum())
 
-# obtain the result objective from the algorithm
-res = algorithm.result()
-# calculate a hash to show that all executions end with the same result
-print("hash", res.F.sum())
+    res.F = 1 / res.F
+    print(res.F)
 
-res.F = 1 / res.F
-print(res.F)
+    for i, x in enumerate(res.X):
+        print("***************************")
+        print("Point: ", i)
+        verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
-for i, x in enumerate(res.X):
-    print("***************************")
-    print("Point: ", i)
-    verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
+    Scatter().add(res.F, facecolor="none", edgecolor="red").show()
 
-Scatter().add(res.F, facecolor="none", edgecolor="red").show()
+    plot = Scatter()
+    plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
+    plot.add(res.F, color="red")
+    plot.show()

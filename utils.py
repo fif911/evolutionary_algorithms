@@ -30,11 +30,13 @@ def verify_solution(env, best_solution, enemies: Optional[list[int]] = None):
     enemies_beaten = 0
     env.update_parameter("multiplemode", "no")
 
-    for enemy in enemies:
-        env.update_parameter('enemies', [enemy])
+    for enemy_idx in enemies:
+        env.update_parameter('enemies', [enemy_idx])
         p, e, t = simulation(env, best_solution, verbose=True)
         enemy_beaten = e == 0 and p > 0
-        print(f"Enemy {enemy};\tPlayer Life: {p}, Enemy Life: {e}, in {t} seconds. \tWon: {enemy_beaten}")
+        print(
+            f"Enemy {enemy_idx};\tPlayer Life: {p:.2f},\t Enemy Life: {e:.2f},\t in {t:.2f} seconds. "
+            f"\tWon: {enemy_beaten}")
         if enemy_beaten:
             enemies_beaten += 1
     print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
