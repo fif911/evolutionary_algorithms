@@ -68,9 +68,9 @@ class objectives(Problem):
         # Return fitness outputs for enemies
         objectives_fitness = {
             # TODO: check correctness
-            "objective_1": [np.mean([dict_enemies[j][i] for j in [1, 6]]) for i in range(POP_SIZE)],
-            "objective_2": [np.mean([dict_enemies[j][i] for j in [2, 5, 8]]) for i in range(POP_SIZE)],
-            "objective_3": [np.mean([dict_enemies[j][i] for j in [3, 4, 7]]) for i in range(POP_SIZE)],
+            "objective_1": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in range(POP_SIZE)],
+            "objective_2": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in range(POP_SIZE)],
+            "objective_3": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in range(POP_SIZE)],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -102,24 +102,23 @@ def main(env: Environment, n_genes: int):
         algorithm.tell(infills=pop)
         # do same more things, printing, logging, storing or even modifying the algorithm object
         # print(algorithm.n_gen, algorithm.evaluator.n_eval)
-        print(f"Generation: {algorithm.n_gen},\t Best fitness: {algorithm.pop.get('F').min():.4f},\t "
-              f"mean: {algorithm.pop.get('F').mean():.4f},\t "
-              f"worst: {algorithm.pop.get('F').max():.2f},\t std: {algorithm.pop.get('F').std():.1f}")
+        print(f"Generation: {algorithm.n_gen}")
+        print(f"Best individual fitness: {', '.join([f'{_:.2f}' for _ in algorithm.result().F[0]])}")
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
-    print("Individuals: ", res.X)
+    print(f"Individuals evaluated: {algorithm.evaluator.n_eval}")
 
     res.F = 1 / res.F
     print(res.F)
 
     for i, x in enumerate(res.X):
-        print(f"------ Solution {i} -----")
+        print(f"------ Solution {i + 1} -----")
         verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
     # Scatter().add(res.F, facecolor="none", edgecolor="red").show()
 
-    plot = Scatter()
+    plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
     # plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
     plot.add(res.F, color="red")
     plot.show()
