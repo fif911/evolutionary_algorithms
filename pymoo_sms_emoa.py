@@ -18,8 +18,8 @@ from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 50
-POP_SIZE = 100
+N_GENERATIONS = 3
+POP_SIZE = 20
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -91,7 +91,7 @@ def plot_pareto_fronts(res):
     # for 3 objectives plot each pair of pareto fronts
     # Hard vs Medium
     plot = Scatter(labels=["Hard enemies", "Medium Enemies"], title="Pareto Front")
-    plot.add(res.F[:, 0, 1], color="red")
+    plot.add(res.F[:, [0, 1]], color="red")
     plot.show()
 
     # Hard vs Easy
@@ -101,7 +101,7 @@ def plot_pareto_fronts(res):
 
     # Medium vs Easy
     plot = Scatter(labels=["Medium enemies", "Easy Enemies"], title="Pareto Front")
-    plot.add(res.F[:, 1, 2], color="red")
+    plot.add(res.F[:, [1, 2]], color="red")
     plot.show()
 
 
