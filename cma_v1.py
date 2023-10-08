@@ -5,15 +5,11 @@ or
 pip install cmaes
 """
 import os
-from typing import Optional
 
 import numpy as np
 from cmaes import CMA
 
-from demo_controller import player_controller
-from evoman.environment import Environment
-
-from utils import simulation, verify_solution
+from utils import simulation, verify_solution, init_env
 
 n_hidden_neurons = 10
 
@@ -48,26 +44,15 @@ def norm(f: int, pfit_pop: list[float]):
 
 
 def main():
-    env = Environment(experiment_name=experiment_name,
-                      enemies=ENEMIES,
-                      playermode="ai",
-                      multiplemode="yes" if len(ENEMIES) > 1 else "no",
-                      player_controller=player_controller(n_hidden_neurons),
-                      enemymode="static",
-                      level=2,
-                      speed="fastest",
-                      logs="off",
-                      visuals=False)
-
-    N_GENES = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
+    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
 
     bounds = np.concatenate(
         [
-            np.tile([-1, 1], (N_GENES, 1)),
+            np.tile([-1, 1], (n_genes, 1)),
         ]
     )
 
-    optimizer = CMA(mean=np.zeros(N_GENES), sigma=0.8, population_size=POP_SIZE, bounds=bounds)
+    optimizer = CMA(mean=np.zeros(n_genes), sigma=0.8, population_size=POP_SIZE, bounds=bounds)
 
     while True:
         solutions_x, solutions_f = [], []

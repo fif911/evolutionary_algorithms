@@ -57,5 +57,4 @@ def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
                       logs="off",
                       visuals=False)
     n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
-    print(f"Number of genes: {n_genes}")
     return env, n_genes
