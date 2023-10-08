@@ -12,76 +12,73 @@ from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
 from pymoo.visualization.scatter import Scatter
 
-from demo_controller import player_controller
-from utils import simulation, verify_solution
+from utils import simulation, verify_solution, init_env
 
 N_GENERATIONS = 50
 POP_SIZE = 100
 ENEMIES = [6, 2, 5, 7, 8]
-MODE = "train"  # train or test
 
 n_hidden_neurons = 10
 
-experiment_name = 'cma_v2_test'
-solution_file_name = 'cma_v2_best.txt'
-os.environ["SDL_VIDEODRIVER"] = "dummy"
+experiment_name = 'pymoo_sms_emoa'
+solution_file_name = 'pymoo_sms_emoa_best.txt'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
-env = Environment(experiment_name=experiment_name,
-                  enemies=ENEMIES,
-                  multiplemode="no",
-                  playermode="ai",
-                  player_controller=player_controller(n_hidden_neurons),
-                  enemymode="static",
-                  level=2,
-                  speed="fastest",
-                  logs="off",
-                  visuals=False)
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 class objectives(Problem):
+    enemies: list[int]
+    env: Environment
 
-    def __init__(self):
-        super().__init__(n_var=265, n_obj=2, n_constr=0, xl=-1, xu=1, type_var=float)
+    def __init__(self, env: Environment, n_genes: int, enemies: list[int], n_objectives):
+        self.env = env
+        self.enemies = enemies
+        super().__init__(n_var=n_genes, n_obj=n_objectives, xl=-1, xu=1, type_var=float)
 
     def _evaluate(self, x, out, *args, **kwargs):
         # Initialize
         dict_enemies = {}
         # Get fitness for each enemy
-        for enemy in ENEMIES:
-            env.update_parameter('enemies', [enemy])
+        for enemy in self.enemies:
+            self.env.update_parameter('enemies', [enemy])
             dict_enemies[enemy] = []
             for i in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(env, x[i, :], inverted_fitness=True))
-        # Stack fitness
-        dict_enemies[2578] = []  # , dict_enemies[4] = [], []
-        for i in range(POP_SIZE):
-            dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
-            # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
+                dict_enemies[enemy].append(simulation(self.env, x[i, :], inverted_fitness=True))
+        # Return fitness outputs for enemies
+        objectives_fitness = {
+            "objective_1": dict_enemies[6],
+            "objective_2": [max([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)]
+        }
+        assert len(objectives_fitness.keys()) == self.n_obj  # assert we return the correct number of objectives
+        out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
+        # dict_enemies[2578] = []  # , dict_enemies[4] = [], []
+        # for i in range(POP_SIZE):
+        #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
+        #     # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
 
-        out["F"] = anp.column_stack([dict_enemies[6], dict_enemies[2578]])
 
-
-if __name__ == '__main__':
-    problem = objectives()
+def main(env: Environment, n_genes: int):
+    problem = objectives(
+        env=env,
+        n_genes=n_genes,
+        enemies=ENEMIES,
+        n_objectives=2
+    )
 
     algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
-
     # until the algorithm has no terminated
     while algorithm.has_next():
         # ask the algorithm for the next solution to be evaluated
         pop = algorithm.ask()
-
         # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
         algorithm.evaluator.eval(problem, pop)
-
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
-
         # do same more things, printing, logging, storing or even modifying the algorithm object
         print(algorithm.n_gen, algorithm.evaluator.n_eval)
         print(1 / algorithm.result().F)
@@ -105,3 +102,13 @@ if __name__ == '__main__':
     plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
     plot.add(res.F, color="red")
     plot.show()
+
+
+if __name__ == '__main__':
+    print("Running pymoo_sms_emoa.py")
+    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
+    env.update_parameter('multiplemode', 'no')
+
+    main(env, n_genes)
+
+    print("Done!")
