@@ -6,6 +6,12 @@ https://pymoo.org/algorithms/list.html
 
 Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+Docs link: https://pymoo.org/algorithms/moo/sms.html
+
+Algorithm: AGE-MOEA
+Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
+Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
+
 """
 import os
 import time
@@ -13,14 +19,15 @@ import time
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
+from pymoo.algorithms.moo.age import AGEMOEA
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
 from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 200
-POP_SIZE = 500
+N_GENERATIONS = 50
+POP_SIZE = 100
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -110,7 +117,8 @@ def main(env: Environment, n_genes: int):
         n_objectives=3
     )
 
-    algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+    # algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+    algorithm = AGEMOEA(pop_size=POP_SIZE)  # https://sci-hub.se/10.1145/3321707.3321839
 
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
