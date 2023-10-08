@@ -1,6 +1,9 @@
 """
 Implementation of multi-objective optimisation using pymoo
 
+https://pymoo.org/algorithms/list.html
+
+
 Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 """
@@ -17,7 +20,7 @@ from utils import simulation, verify_solution, init_env
 
 N_GENERATIONS = 50
 POP_SIZE = 100
-ENEMIES = [6, 2, 5, 7, 8]
+ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
 
@@ -40,9 +43,17 @@ class objectives(Problem):
 
     def _evaluate(self, x: list[np.array], out, *args, **kwargs):
         """Evaluate the fitness of each individual in the population
+        We can turn on elementwise_evaluation to evaluate each individual in the population separately
+        https://pymoo.org/problems/parallelization.html#Custom-Parallelization
 
         x - list of individuals in the population
         out - dictionary with the fitness outputs
+
+        # when we have multiple enemies we need to average the fitness somehow
+        # Ideas: mean of the fitness will show how agent performs with both enemies
+        #        max will show how agent performs with the worst enemy (this does not reflect the performance with
+        #        another enemy)
+        #        weighted average is another option, but then we have another problem of how to weight the enemies
         """
 
         # Initialize
@@ -53,13 +64,16 @@ class objectives(Problem):
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+
         # Return fitness outputs for enemies
         objectives_fitness = {
-            "objective_1": dict_enemies[6],
-            "objective_2": [max([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)]
+            # TODO: check correctness
+            "objective_1": [np.mean([dict_enemies[j][i] for j in [1, 6]]) for i in range(POP_SIZE)],
+            "objective_2": [np.mean([dict_enemies[j][i] for j in [2, 5, 8]]) for i in range(POP_SIZE)],
+            "objective_3": [np.mean([dict_enemies[j][i] for j in [3, 4, 7]]) for i in range(POP_SIZE)],
         }
-        assert len(objectives_fitness.keys()) == self.n_obj  # assert we return the correct number of objectives
-        out["F"] = anp.column_stack([objectives_fitness["objective_1"], objectives_fitness["objective_2"]])
+
+        out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
         # dict_enemies[2578] = []  # , dict_enemies[4] = [], []
         # for i in range(POP_SIZE):
         #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
@@ -71,7 +85,7 @@ def main(env: Environment, n_genes: int):
         env=env,
         n_genes=n_genes,
         enemies=ENEMIES,
-        n_objectives=2
+        n_objectives=3
     )
 
     algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
@@ -87,26 +101,26 @@ def main(env: Environment, n_genes: int):
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
         # do same more things, printing, logging, storing or even modifying the algorithm object
-        print(algorithm.n_gen, algorithm.evaluator.n_eval)
-        print(1 / algorithm.result().F)
+        # print(algorithm.n_gen, algorithm.evaluator.n_eval)
+        print(f"Generation: {algorithm.n_gen},\t Best fitness: {algorithm.pop.get('F').min():.4f},\t "
+              f"mean: {algorithm.pop.get('F').mean():.4f},\t "
+              f"worst: {algorithm.pop.get('F').max():.2f},\t std: {algorithm.pop.get('F').std():.1f}")
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
-    # calculate a hash to show that all executions end with the same result
-    print("hash", res.F.sum())
+    print("Individuals: ", res.X)
 
     res.F = 1 / res.F
     print(res.F)
 
     for i, x in enumerate(res.X):
-        print("***************************")
-        print("Point: ", i)
+        print(f"------ Solution {i} -----")
         verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
-    Scatter().add(res.F, facecolor="none", edgecolor="red").show()
+    # Scatter().add(res.F, facecolor="none", edgecolor="red").show()
 
     plot = Scatter()
-    plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
+    # plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
     plot.add(res.F, color="red")
     plot.show()
 
