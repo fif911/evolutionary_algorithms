@@ -44,7 +44,8 @@ def solution_search(env, n_genes):
         X = es.ask()  # get list of new solutions
         fit = [simulation(env, x) for x in X]  # evaluate each solution
         print(
-            f"Generation {es.countiter}:\t FEvals: {es.countevals},\t\t Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
+            f"Generation {es.countiter}:\t FEvals: {es.countevals},"
+            f"\t\t Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
             f"worst: {max(fit):.2f},\t std: {np.std(fit):.1f}")
 
         # TODO: This is test mutation. Must be removed
