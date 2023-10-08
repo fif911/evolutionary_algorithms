@@ -68,7 +68,6 @@ class objectives(Problem):
 
         # Return fitness outputs for enemies
         objectives_fitness = {
-            # TODO: check correctness
             "objective_1": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in range(POP_SIZE)],
             "objective_2": [max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
                             range(POP_SIZE)],
@@ -77,10 +76,6 @@ class objectives(Problem):
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
-        # dict_enemies[2578] = []  # , dict_enemies[4] = [], []
-        # for i in range(POP_SIZE):
-        #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
-        #     # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
 
 
 def plot_pareto_fronts(res):
