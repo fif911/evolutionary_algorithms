@@ -18,13 +18,11 @@ import time
 
 import numpy as np
 from dask.distributed import Client
-from itertools import product
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
-from multiprocessing.pool import ThreadPool, Pool
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.visualization.scatter import Scatter
-from pymoo.core.problem import DaskParallelization, ElementwiseProblem, Problem, StarmapParallelization
+from pymoo.core.problem import Problem
 
 
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm
@@ -67,12 +65,14 @@ class objectives(Problem):
         #        another enemy)
         #        weighted average is another option, but then we have another problem of how to weight the enemies
         """
-
+        client = Client()
+        client.restart()
+        print("--- DASK STARTED ---")
+        
         # Initialize
         self.dict_enemies = {}
-        
-        params = [(x, enemy) for enemy in self.enemies]
-        jobs = client.submit(self._evaluate_single, params)
+        jobs = [client.submit(self._evaluate_single, (x, enemy)) for enemy in self.enemies]
+        print("Added all jobs.")
         
         # Return fitness outputs for enemies
         objectives_fitness = {
@@ -179,16 +179,11 @@ def main(env: Environment, n_genes: int):
 if __name__ == '__main__':
     time_start = time.time()
     print("Running pymoo_sms_emoa.py")
-    
-    client = Client()
-    client.restart()
-    print("--- DASK STARTED ---")
 
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
     main(env, n_genes)
 
-    client.close()
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
