@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 import numpy as np
@@ -64,7 +65,7 @@ def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
     return env, n_genes
 
 
-def run_pymoo_algorithm(algorithm, problem):
+def run_pymoo_algorithm(algorithm, problem, experiment_name="pymoo_sms_emoa", postfix=""):
     # until the algorithm has no terminated
     while algorithm.has_next():
         # ask the algorithm for the next solution to be evaluated
@@ -77,4 +78,19 @@ def run_pymoo_algorithm(algorithm, problem):
         print(f"Generation: {algorithm.n_gen}")
         print(f"Best individual fitness: {', '.join([f'{_:.3f}' for _ in algorithm.result().F[0]])}")
 
+    # save the whole population to a file
+    np.savetxt(f'{experiment_name}/algorithm_gens_{algorithm.n_gen}_p-size_{len(algorithm.pop)}_{postfix}.txt',
+               algorithm.pop.get("X"))
+
     return algorithm
+
+
+def initialise_script(experiment_name):
+    if not os.path.exists(experiment_name):
+        os.makedirs(experiment_name)
+
+    # Clean the folder
+    for file in os.listdir(experiment_name):
+        os.remove(os.path.join(experiment_name, file))
+
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
