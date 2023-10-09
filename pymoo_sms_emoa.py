@@ -22,6 +22,7 @@ from evoman.environment import Environment
 from pymoo.algorithms.moo.age import AGEMOEA
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
+from pymoo.operators.crossover.hux import HalfUniformCrossover
 from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
@@ -88,6 +89,8 @@ class objectives(Problem):
 
 def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
+    print(f"Plotting {res.F.shape[0]} solutions")
+
     plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
     plot.add(res.F, color="red")
     plot.add(res.F[best_solutions_idx], color="blue", s=80, label="Best solutions")
@@ -121,8 +124,9 @@ def main(env: Environment, n_genes: int):
         n_objectives=3
     )
 
-    # algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
-    algorithm = AGEMOEA(pop_size=POP_SIZE)  # https://sci-hub.se/10.1145/3321707.3321839
+    # algorithm = SMSEMOA(pop_size=POP_SIZE)
+    # algorithm = AGEMOEA(pop_size=POP_SIZE)
+    algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
 
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
@@ -159,6 +163,8 @@ def main(env: Environment, n_genes: int):
         elif enemies_beaten == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
             best_solutions_idx.append(i)
+
+    print(f"Most enemies beaten: {max_enemies_beaten}; Number of these solutions: {len(best_solutions)}")
 
     # save the best solutions to files
     for i, solution in enumerate(best_solutions):
