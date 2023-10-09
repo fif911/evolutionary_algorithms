@@ -13,21 +13,21 @@ Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
 Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
 
 """
-import os
 import time
 
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
-from pymoo.algorithms.moo.age import AGEMOEA
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
 from pymoo.operators.crossover.hux import HalfUniformCrossover
+from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
-from utils import simulation, verify_solution, init_env, run_pymoo_algorithm
+from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS = 80
+N_GENERATIONS_LEVEL_1 = 0
+N_GENERATIONS_LEVEL_2 = 50
 POP_SIZE = 50
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -35,10 +35,8 @@ n_hidden_neurons = 10
 
 experiment_name = 'pymoo_sms_emoa'
 solution_file_name = 'pymoo_sms_emoa_best'
-if not os.path.exists(experiment_name):
-    os.makedirs(experiment_name)
 
-os.environ["SDL_VIDEODRIVER"] = "dummy"
+initialise_script(experiment_name=experiment_name)
 
 
 class objectives(Problem):
@@ -126,17 +124,22 @@ def main(env: Environment, n_genes: int):
     # algorithm = AGEMOEA(pop_size=POP_SIZE)
     # algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
 
-    env.update_parameter("level", 1)
-    algorithm = SMSEMOA(pop_size=POP_SIZE, )
-    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
+    if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
+        env.update_parameter("level", 1)
+        algorithm = SMSEMOA(pop_size=POP_SIZE, )
+        algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_1), verbose=False)
 
-    algorithm = run_pymoo_algorithm(algorithm, problem)
-    print("Switching to the enemy level 2")
+        algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_1")
+        next_population = np.array([i.X for i in algorithm.pop])
+    else:
+        next_population = FloatRandomSampling()
+
+    print("Setting the enemy level to 2")
     env.update_parameter("level", 2)
-    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=np.array([i.X for i in algorithm.pop]))
-    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
+    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=HalfUniformCrossover(prob_hux=0.3))
+    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
 
-    algorithm = run_pymoo_algorithm(algorithm, problem)
+    algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
