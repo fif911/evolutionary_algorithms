@@ -33,7 +33,7 @@ ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 n_hidden_neurons = 10
 
 experiment_name = 'pymoo_sms_emoa'
-solution_file_name = 'pymoo_sms_emoa_best.txt'
+solution_file_name = 'pymoo_sms_emoa_best'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
@@ -86,21 +86,24 @@ class objectives(Problem):
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def plot_pareto_fronts(res):
+def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
     plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
     plot.add(res.F, color="red")
+    plot.add(res.F[best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # for 3 objectives plot each pair of pareto fronts
     # Hard vs Medium
     plot = Scatter(labels=["Hard enemies", "Medium Enemies"], title="Pareto Front")
     plot.add(res.F[:, [0, 1]], color="red")
+    plot.add(res.F[:, [0, 1]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # Hard vs Easy
     plot = Scatter(labels=["Hard enemies", "Easy Enemies"], title="Pareto Front")
     plot.add(res.F[:, [0, 2]], color="red")
+    plot.add(res.F[:, [0, 2]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # Medium vs Easy
@@ -133,7 +136,7 @@ def main(env: Environment, n_genes: int):
         # do same more things, printing, logging, storing or even modifying the algorithm object
         # print(algorithm.n_gen, algorithm.evaluator.n_eval)
         print(f"Generation: {algorithm.n_gen}")
-        print(f"Best individual fitness: {', '.join([f'{_:.2f}' for _ in algorithm.result().F[0]])}")
+        print(f"Best individual fitness: {', '.join([f'{_:.3f}' for _ in algorithm.result().F[0]])}")
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
@@ -144,20 +147,23 @@ def main(env: Environment, n_genes: int):
 
     max_enemies_beaten = 0
     best_solutions = []
+    best_solutions_idx = []
     for i, x in enumerate(res.X):
         print(f"------ Solution {i + 1} -----")
         enemies_beaten = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
         if enemies_beaten > max_enemies_beaten:
             max_enemies_beaten = enemies_beaten
             best_solutions = [x]  # reset the list because we found a better performing solution
+            best_solutions_idx = [i]
         elif enemies_beaten == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
+            best_solutions_idx.append(i)
 
     # save the best solutions to files
     for i, solution in enumerate(best_solutions):
-        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
+        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}.txt', solution)
 
-    plot_pareto_fronts(res)
+    plot_pareto_fronts(res, best_solutions_idx)
 
 
 if __name__ == '__main__':
