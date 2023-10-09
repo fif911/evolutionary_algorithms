@@ -278,7 +278,6 @@ class Environment(object):
     # loads a state for environment from files
     def load_state(self):
 
-
         try:
 
             # loads parameters
@@ -395,7 +394,10 @@ class Environment(object):
 
             # default fitness function for single solutions
     def fitness_single(self):
-        return 0.9*(100 - self.get_enemylife()) + 0.1*self.get_playerlife() - numpy.log(self.get_time())
+        #return 0.9*(100 - self.get_enemylife()) + 0.1*self.get_playerlife() - numpy.log(self.get_time())
+        #return (100 - self.get_enemylife()) + numpy.log(self.get_playerlife() + 0.001) # Version 1
+        return (100 - self.get_enemylife()) + numpy.log(self.get_playerlife() + 0.001) - numpy.log(self.get_time()) # Version 2
+        #return (100 * numpy.log(100.001) / (100**2) * ((100 - self.get_enemylife()))**2) + numpy.log(self.get_playerlife() + 0.001)
 
     # default fitness function for consolidating solutions among multiple games
     def cons_multi(self,values):

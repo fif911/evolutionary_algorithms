@@ -6,18 +6,20 @@ Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 """
 import os
 
+from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
+from pymoo.util.running_metric import RunningMetricAnimation
 from pymoo.visualization.scatter import Scatter
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 50
-POP_SIZE = 100
-ENEMIES = [6, 2, 5, 7, 8]
+N_GENERATIONS = 100
+POP_SIZE = 20
+ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
 
@@ -50,34 +52,65 @@ class objectives(Problem):
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
+            
+            if enemy in [2, 5, 7, 8]:
+                #self.env.update_parameter('level', 1)
+                self.env.update_parameter('randomini', "no")
+            else:
+                #self.env.update_parameter('level', 1)
+                self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                if self.env.randomini == "yes":
+                    results = []
+                    for rep in range(5):
+                        fitness = simulation(self.env, x[individual_id], inverted_fitness=True)
+                        results.append(fitness)
+                    dict_enemies[enemy].append(np.mean(results))
+                else:
+                    dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
         # Return fitness outputs for enemies
-        objectives_fitness = {
-            "objective_1": dict_enemies[6],
-            "objective_2": [max([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)]
-        }
-        assert len(objectives_fitness.keys()) == self.n_obj  # assert we return the correct number of objectives
-        out["F"] = anp.column_stack([objectives_fitness["objective_1"], objectives_fitness["objective_2"]])
+        # objectives_fitness = {
+        #     "objective_1": dict_enemies[6],
+        #     "objective_2": [max([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)],
+        #     "objective_3": dict_enemies[4]
+        # }
+        # objectives_fitness = {
+        #     "objective_1": dict_enemies[5],
+        #     "objective_2": dict_enemies[6],
+        #     "objective_3": dict_enemies[1]
+        # }
+        # assert len(objectives_fitness.keys()) == self.n_obj  # assert we return the correct number of objectives
+        # out["F"] = anp.column_stack([objectives_fitness["objective_1"], objectives_fitness["objective_2"], 
+        #                              objectives_fitness["objective_3"]])
+        # dict_enemies[2578] = [np.mean([dict_enemies[j][i] for j in [2, 5, 7, 8]]) for i in range(POP_SIZE)]
+        # dict_enemies[1346] = [np.mean([dict_enemies[j][i] for j in [1, 3, 4, 6]]) for i in range(POP_SIZE)]
+        
+        out["F"] = anp.column_stack([dict_enemies[j] for j in ENEMIES])
         # dict_enemies[2578] = []  # , dict_enemies[4] = [], []
         # for i in range(POP_SIZE):
         #     dict_enemies[2578].append(max([dict_enemies[j][i] for j in [2, 5, 7, 8]]))  # Temporarily
         #     # dict_enemies[4].append(max([dict_enemies[j][i] for j in [4]])) # Temporarily
 
 
-def main(env: Environment, n_genes: int):
+def main(env: Environment, n_genes: int, population = None):
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=ENEMIES,
-        n_objectives=2
+        n_objectives=8
     )
 
-    algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+    
+    if population is None:
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed = 1)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
+    else:
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population)
 
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
+
+    # Environment update
     # until the algorithm has no terminated
     while algorithm.has_next():
         # ask the algorithm for the next solution to be evaluated
@@ -97,18 +130,39 @@ def main(env: Environment, n_genes: int):
 
     res.F = 1 / res.F
     print(res.F)
-
+    print("Level 1")
+    env.update_parameter('level', 1)
+    env.update_parameter('randomini', "no")
     for i, x in enumerate(res.X):
         print("***************************")
         print("Point: ", i)
         verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
+    
+    # print("Level 2")
+    # env.update_parameter('level', 2)
+    # env.update_parameter('randomini', "no")
+    # for i, x in enumerate(res.opt.get("X")):
+    #     print("***************************")
+    #     print("Point: ", i)
+    #     verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
 
-    Scatter().add(res.F, facecolor="none", edgecolor="red").show()
+    # Scatter().add(res.F, facecolor="none", edgecolor="red").show()
 
-    plot = Scatter()
-    plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
-    plot.add(res.F, color="red")
-    plot.show()
+    # plot = Scatter()
+    # plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
+    # plot.add(res.F, color="red")
+    # plot.show()
+
+    # running = RunningMetricAnimation(delta_gen=10,
+    #                     n_plots=4,
+    #                     key_press=False,
+    #                     do_show=True)
+
+    # print(res.history)
+    # for algorithm in res.history:
+    #     running.update(algorithm)
+
+    # return pop.get("X")
 
 
 if __name__ == '__main__':
@@ -116,6 +170,9 @@ if __name__ == '__main__':
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
-    main(env, n_genes)
+    env.update_parameter('level', 1)
+    pop = main(env, n_genes)
+    # env.update_parameter('level', 2)
+    # pop = main(env, n_genes, population=pop)
 
     print("Done!")
