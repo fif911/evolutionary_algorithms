@@ -1,17 +1,5 @@
 """
 Implementation of multi-objective optimisation using pymoo
-
-https://pymoo.org/algorithms/list.html
-
-
-Algorithm: SMS-EMOA
-Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
-Docs link: https://pymoo.org/algorithms/moo/sms.html
-
-Algorithm: AGE-MOEA
-Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
-Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
-
 """
 import time
 
