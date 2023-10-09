@@ -25,13 +25,13 @@ n_hidden_neurons = 10
 env = Environment(experiment_name=experiment_name,
                   playermode="ai",
                   player_controller=player_controller(n_hidden_neurons),
-                  speed="normal",
+                  speed="fastest",
                   enemymode="static",
                   level=2,
                   logs="off",
                   visuals=True)
 
-sol = np.loadtxt('solutions_demo/cma_v2_best_ngens_200_pop_size100.txt')
+sol = np.loadtxt('solutions_beats_5_enemies/pymoo_sms_emoa_best.txt_12')
 
 # tests saved demo solutions for each enemy
 for en in range(1, 9):
@@ -39,3 +39,4 @@ for en in range(1, 9):
     env.update_parameter('enemies', [en])
     f, p, e, t = env.play(sol)
     print(f" ----- Enemy {en} Player {p}; Enemy {e}; in {t} seconds. Won: {e == 0}")
+    print(f"Fitness: {f}; Inverted fitness: {1 / f}")
