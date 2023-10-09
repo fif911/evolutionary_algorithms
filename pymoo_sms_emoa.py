@@ -131,19 +131,20 @@ def main(env: Environment, n_genes: int):
 
         algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_1")
         next_population = np.array([i.X for i in algorithm.pop])
+        first_algorithm_evaluations = algorithm.evaluator.n_eval
     else:
         next_population = FloatRandomSampling()
+        first_algorithm_evaluations = 0
 
     print("Setting the enemy level to 2")
     env.update_parameter("level", 2)
-    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=HalfUniformCrossover(prob_hux=0.3))
+    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
 
     algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
-    print(f"Individuals evaluated: {algorithm.evaluator.n_eval}")
 
     res.F = 1 / res.F
     print(res.F)
@@ -163,6 +164,7 @@ def main(env: Environment, n_genes: int):
             best_solutions_idx.append(i)
 
     print(f"Most enemies beaten: {max_enemies_beaten}; Number of these solutions: {len(best_solutions)}")
+    print(f"Individuals evaluated: {algorithm.evaluator.n_eval + first_algorithm_evaluations}")
 
     # save the best solutions to files
     for i, solution in enumerate(best_solutions):
