@@ -62,3 +62,19 @@ def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
                       visuals=False)
     n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
     return env, n_genes
+
+
+def run_pymoo_algorithm(algorithm, problem):
+    # until the algorithm has no terminated
+    while algorithm.has_next():
+        # ask the algorithm for the next solution to be evaluated
+        pop = algorithm.ask()
+        # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
+        algorithm.evaluator.eval(problem, pop)
+        # returned the evaluated individuals which have been evaluated or even modified
+        algorithm.tell(infills=pop)
+        # do same more things, printing, logging, storing or even modifying the algorithm object
+        print(f"Generation: {algorithm.n_gen}")
+        print(f"Best individual fitness: {', '.join([f'{_:.3f}' for _ in algorithm.result().F[0]])}")
+
+    return algorithm
