@@ -27,7 +27,9 @@ def simulation(env, xm: np.ndarray, inverted_fitness=True, verbose=False):
     return 1 / f
 
 
-def verify_solution(env, best_solution, enemies: Optional[list[int]] = None):
+def verify_solution(env, best_solution, enemies: Optional[list[int]] = None) -> int:
+    """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
+
     if enemies is None:
         enemies = [1, 2, 3, 4, 5, 6, 7, 8]
     enemies_beaten = 0
@@ -43,6 +45,8 @@ def verify_solution(env, best_solution, enemies: Optional[list[int]] = None):
         if enemy_beaten:
             enemies_beaten += 1
     print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
+
+    return enemies_beaten
 
 
 def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):

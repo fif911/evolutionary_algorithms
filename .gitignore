@@ -5,6 +5,7 @@ __pycache__/
 # Visual Studio Code
 .vscode/
 .idea/
+outcmaes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
