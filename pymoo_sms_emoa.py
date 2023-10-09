@@ -109,6 +109,7 @@ def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     # Medium vs Easy
     plot = Scatter(labels=["Medium enemies", "Easy Enemies"], title="Pareto Front")
     plot.add(res.F[:, [1, 2]], color="red")
+    plot.add(res.F[:, [1, 2]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
 
