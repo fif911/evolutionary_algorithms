@@ -25,10 +25,10 @@ from pymoo.core.problem import Problem
 from pymoo.operators.crossover.hux import HalfUniformCrossover
 from pymoo.visualization.scatter import Scatter
 
-from utils import simulation, verify_solution, init_env
+from utils import simulation, verify_solution, init_env, run_pymoo_algorithm
 
-N_GENERATIONS = 50
-POP_SIZE = 100
+N_GENERATIONS = 80
+POP_SIZE = 50
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -76,12 +76,12 @@ class objectives(Problem):
 
         # Return fitness outputs for enemies
         objectives_fitness = {
-            "objective_1": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-                            range(POP_SIZE)],
-            "objective_2": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-                            range(POP_SIZE)],
-            "objective_3": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-                            range(POP_SIZE)],
+            "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
+                               range(POP_SIZE)],
+            "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+                                 range(POP_SIZE)],
+            "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
+                               range(POP_SIZE)],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -123,25 +123,20 @@ def main(env: Environment, n_genes: int):
         enemies=ENEMIES,
         n_objectives=3
     )
-
-    # algorithm = SMSEMOA(pop_size=POP_SIZE)
     # algorithm = AGEMOEA(pop_size=POP_SIZE)
-    algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
+    # algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
 
-    # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
+    env.update_parameter("level", 1)
+    algorithm = SMSEMOA(pop_size=POP_SIZE, )
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
-    # until the algorithm has no terminated
-    while algorithm.has_next():
-        # ask the algorithm for the next solution to be evaluated
-        pop = algorithm.ask()
-        # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
-        algorithm.evaluator.eval(problem, pop)
-        # returned the evaluated individuals which have been evaluated or even modified
-        algorithm.tell(infills=pop)
-        # do same more things, printing, logging, storing or even modifying the algorithm object
-        # print(algorithm.n_gen, algorithm.evaluator.n_eval)
-        print(f"Generation: {algorithm.n_gen}")
-        print(f"Best individual fitness: {', '.join([f'{_:.3f}' for _ in algorithm.result().F[0]])}")
+
+    algorithm = run_pymoo_algorithm(algorithm, problem)
+    print("Switching to the enemy level 2")
+    env.update_parameter("level", 2)
+    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=np.array([i.X for i in algorithm.pop]))
+    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
+
+    algorithm = run_pymoo_algorithm(algorithm, problem)
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
