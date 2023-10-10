@@ -145,7 +145,7 @@ def main(env: Environment, n_genes: int, population=None):
         algorithm.tell(infills=pop)
 
     # obtain the result objective from the algorithm
-    res = copy.deepcopy(algorithm.result())
+    res = algorithm.result()
 
     res.F = 1 / res.F
 
@@ -154,7 +154,6 @@ def main(env: Environment, n_genes: int, population=None):
     best_not_beaten = []
     env.update_parameter('level', 2)
     for i, x in enumerate(res.X):
-        # print(f"------ Solution {i + 1} -----")
         enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
                                                                 print_results=False)
         if len(enemies_beaten) > max_enemies_beaten:
@@ -169,7 +168,6 @@ def main(env: Environment, n_genes: int, population=None):
     # for i, solution in enumerate(best_solutions):
     #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
-    # plot_pareto_fronts(res, best_solutions)
     return [i.x for i in algorithm.ask()], best_not_beaten
 
 
