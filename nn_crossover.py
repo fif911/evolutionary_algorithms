@@ -65,7 +65,7 @@ def mut_binomial(n, m, prob, at_least_once=True):
     # return mating_pool.astype(int)
 
 
-class BinomialCrossover(Crossover):
+class NNCrossover(Crossover):
 
     def __init__(self, bias=0.5, n_offsprings=2, **kwargs):
         super().__init__(2, n_offsprings, **kwargs)
@@ -87,7 +87,3 @@ class BinomialCrossover(Crossover):
         else:
             raise Exception
         return Xp
-
-
-class BX(BinomialCrossover):
-    pass
