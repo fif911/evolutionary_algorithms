@@ -166,12 +166,13 @@ def main(env: Environment, n_genes: int, population=None):
     env.update_parameter('level', 2)
     for i, x in enumerate(res.X):
         # print(f"------ Solution {i + 1} -----")
-        enemies_beaten, enemies_not_beaten = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
-        if enemies_beaten > max_enemies_beaten:
-            max_enemies_beaten = enemies_beaten
+        enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
+                                                                print_results=False)
+        if len(enemies_beaten) > max_enemies_beaten:
+            max_enemies_beaten = len(enemies_beaten)
             best_solutions = [x]  # reset the list because we found a better performing solution
             best_not_beaten = [enemies_not_beaten]
-        elif enemies_beaten == max_enemies_beaten:
+        elif len(enemies_beaten) == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
             best_not_beaten.append(enemies_not_beaten)
 

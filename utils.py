@@ -28,26 +28,56 @@ def simulation(env, xm: np.ndarray, inverted_fitness=True, verbose=False):
     return 1 / f
 
 
-def verify_solution(env, best_solution, enemies: Optional[list[int]] = None) -> int:
+# def verify_solution(env, best_solution, enemies: Optional[list[int]] = None) -> int:
+#     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
+#
+#     if enemies is None:
+#         enemies = [1, 2, 3, 4, 5, 6, 7, 8]
+#     enemies_beaten = 0
+#     env.update_parameter("multiplemode", "no")
+#
+#     for enemy_idx in enemies:
+#         env.update_parameter('enemies', [enemy_idx])
+#         p, e, t = simulation(env, best_solution, verbose=True)
+#         enemy_beaten = e == 0 and p > 0
+#         print(
+#             f"Enemy {enemy_idx};\tPlayer Life: {p:.2f},\t Enemy Life: {e:.2f},\t in {t:.2f} seconds. "
+#             f"\tWon: {enemy_beaten}")
+#         if enemy_beaten:
+#             enemies_beaten += 1
+#     print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
+#
+#     return enemies_beaten
+
+
+def verify_solution(env, best_solution, enemies: Optional[list[int]] = None, print_results=True, verbose=False):
     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
 
     if enemies is None:
         enemies = [1, 2, 3, 4, 5, 6, 7, 8]
-    enemies_beaten = 0
     env.update_parameter("multiplemode", "no")
+
+    enemies_beaten, enemies_not_beaten, enemy_lives = [], [], []
 
     for enemy_idx in enemies:
         env.update_parameter('enemies', [enemy_idx])
         p, e, t = simulation(env, best_solution, verbose=True)
-        enemy_beaten = e == 0 and p > 0
-        print(
-            f"Enemy {enemy_idx};\tPlayer Life: {p:.2f},\t Enemy Life: {e:.2f},\t in {t:.2f} seconds. "
-            f"\tWon: {enemy_beaten}")
-        if enemy_beaten:
-            enemies_beaten += 1
-    print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
-
-    return enemies_beaten
+        is_enemy_beaten = e == 0 and p > 0
+        if print_results:
+            print(
+                f"Enemy {enemy_idx};\tPlayer Life: {p:.2f},\t Enemy Life: {e:.2f},\t in {t:.2f} seconds. "
+                f"\tWon: {is_enemy_beaten}")
+        if is_enemy_beaten:
+            enemies_beaten.append(enemy_idx)
+        else:
+            enemies_not_beaten.append(enemy_idx)
+        enemy_lives.append(e)
+    if print_results:
+        print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
+    if verbose:
+        return enemies_beaten, enemies_not_beaten, enemy_lives
+    else:
+        return len(enemies_beaten)
 
 
 def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
