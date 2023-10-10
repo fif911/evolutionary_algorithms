@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Callable
 
 import numpy as np
 from evoman.environment import Environment
@@ -7,7 +7,8 @@ from evoman.environment import Environment
 from demo_controller import player_controller
 
 
-def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False):
+def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False,
+               fitness_function: Callable = None):
     """Run one episode and return the inverted fitness for minimization problem
 
     Fitness function:
@@ -17,6 +18,9 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     return_enemies: if True, return the player life, enemy life and time
     """
     f, p, e, t = env.play(pcont=xm)
+    if fitness_function is not None:
+        f = fitness_function(p, e, t)
+
     if not inverted_fitness:
         return f  # return the original fitness
     if verbose:
@@ -26,28 +30,6 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
         f = 0.00001
 
     return 1 / f
-
-
-# def verify_solution(env, best_solution, enemies: Optional[list[int]] = None) -> int:
-#     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
-#
-#     if enemies is None:
-#         enemies = [1, 2, 3, 4, 5, 6, 7, 8]
-#     enemies_beaten = 0
-#     env.update_parameter("multiplemode", "no")
-#
-#     for enemy_idx in enemies:
-#         env.update_parameter('enemies', [enemy_idx])
-#         p, e, t = simulation(env, best_solution, verbose=True)
-#         enemy_beaten = e == 0 and p > 0
-#         print(
-#             f"Enemy {enemy_idx};\tPlayer Life: {p:.2f},\t Enemy Life: {e:.2f},\t in {t:.2f} seconds. "
-#             f"\tWon: {enemy_beaten}")
-#         if enemy_beaten:
-#             enemies_beaten += 1
-#     print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
-#
-#     return enemies_beaten
 
 
 def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]] = None, print_results=True,
@@ -109,7 +91,7 @@ def run_pymoo_algorithm(algorithm, problem, experiment_name="pymoo_sms_emoa", po
         algorithm.tell(infills=pop)
         # do same more things, printing, logging, storing or even modifying the algorithm object
         print(f"Generation: {algorithm.n_gen}")
-        print(f"Best individual fitness: {', '.join([f'{_:.3f}' for _ in algorithm.result().F[0]])}")
+        print(f"Best individual fitness: {', '.join([f'{v:.3f} ({1 / v:.2f})' for v in algorithm.result().F[0]])}")
 
     # save the whole population to a file
     np.savetxt(f'{experiment_name}/algorithm_gens_{algorithm.n_gen}_p-size_{len(algorithm.pop)}_{postfix}.txt',

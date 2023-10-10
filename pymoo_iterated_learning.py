@@ -14,6 +14,7 @@ import time
 
 from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
 
+from fitness_functions import individual_gain
 from nn_crossover import NNCrossover
 from matplotlib import pyplot as plt
 import numpy as np
@@ -76,7 +77,8 @@ class objectives(Problem):
 
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                dict_enemies[enemy].append(
+                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
 
         # Return fitness outputs for enemies
         # objectives_fitness = {

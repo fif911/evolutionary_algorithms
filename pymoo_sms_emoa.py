@@ -23,11 +23,12 @@ from pymoo.core.problem import Problem
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
+from fitness_functions import original_fitness, individual_gain
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 50
-N_GENERATIONS_LEVEL_2 = 50
+N_GENERATIONS_LEVEL_1 = 20
+N_GENERATIONS_LEVEL_2 = 20
 POP_SIZE = 100
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -74,7 +75,8 @@ class objectives(Problem):
 
             dict_enemies[enemy] = []
             for individual_id in range(len(x)):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                dict_enemies[enemy].append(
+                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
 
         # Return fitness outputs for enemies
         objectives_fitness = {
