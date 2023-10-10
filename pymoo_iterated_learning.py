@@ -158,6 +158,7 @@ def main(env: Environment, n_genes: int, population=None):
             best_not_beaten = [enemies_not_beaten]
         elif len(enemies_beaten) == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
+            # TODO: here we may check what is the distribution of the population. Maybe others perform better on other enemies
             best_not_beaten.append(enemies_not_beaten)
 
     # # save the best solutions to files
