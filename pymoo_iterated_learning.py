@@ -28,7 +28,7 @@ from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
 TOTAL_ITERATIONS = 100
-N_GENERATIONS = 10
+N_GENERATIONS = 25
 POP_SIZE = 20
 
 global ENEMIES
@@ -122,6 +122,7 @@ def plot_pareto_fronts(res):
 
 
 def main(env: Environment, n_genes: int, population=None, crossover=SimulatedBinaryCrossover()):
+    print("Number of objectives: ", len(ENEMIES) + (len(CLUSTER) > 0))
     problem = objectives(
         env=env,
         n_genes=n_genes,
