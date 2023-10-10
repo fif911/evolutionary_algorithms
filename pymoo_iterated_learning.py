@@ -12,6 +12,7 @@ import copy
 import os
 import time
 
+from nn_crossover import NNCrossover
 from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
@@ -24,7 +25,7 @@ from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
-N_GENERATIONS = 10
+N_GENERATIONS = 30
 POP_SIZE = 20
 
 global ENEMIES
@@ -126,10 +127,10 @@ def main(env: Environment, n_genes: int, population=None):
     )
 
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1)
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, crossover=NNCrossover())
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population)
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population, crossover=NNCrossover())
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
