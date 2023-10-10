@@ -8,6 +8,7 @@ Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 Docs link: https://pymoo.org/algorithms/moo/sms.html
 """
+import copy
 import os
 import time
 
@@ -131,34 +132,22 @@ def main(env: Environment, n_genes: int, population=None):
     )
 
     if population is None:
-        # algorithm = SMSEMOA(pop_size=POP_SIZE)  # https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1)  # https://sci-hub.se/10.1145/3321707.3321839
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1)
     else:
         population = np.array(population)
         algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population)
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
-    # Environment update
-    # until the algorithm has no terminated
     while algorithm.has_next():
-        # ask the algorithm for the next solution to be evaluated
         pop = algorithm.ask()
-        # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
         algorithm.evaluator.eval(problem, pop)
-        # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
-        # do same more things, printing, logging, storing or even modifying the algorithm object
-        # print(algorithm.n_gen, algorithm.evaluator.n_eval)
-        # print(f"Generation: {algorithm.n_gen}")
-        # print(f"Best individual fitness: {', '.join([f'{_:.2f}' for _ in algorithm.result().F[0]])}")
 
     # obtain the result objective from the algorithm
-    res = algorithm.result()
-    # print(f"Individuals evaluated: {algorithm.evaluator.n_eval}")
+    res = copy.deepcopy(algorithm.result())
 
     res.F = 1 / res.F
-    # print(res.F)
 
     max_enemies_beaten = 0
     best_solutions = []
@@ -203,15 +192,20 @@ if __name__ == '__main__':
         CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
         if not CLUSTER:
             CLUSTER = [np.random.choice(best_not_beaten[0])]
+        print(f"Cluster: {CLUSTER}")
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
+        print(f"Enemies: {ENEMIES}")
         # Set level
         level = np.random.choice([1, 2, 3])
         env.update_parameter('level', level)
+        print(f"Enemy Level: {level}")
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten = main(env, n_genes, population=pop)
         print(f"Enemies beaten: {len(CLUSTER)}")
+        print(f"Evaluations: {evaluations}")
+        print("----")
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")

@@ -13,6 +13,7 @@ Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
 Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
 
 """
+import copy
 import time
 
 import numpy as np
@@ -144,7 +145,7 @@ def main(env: Environment, n_genes: int):
     algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")
 
     # obtain the result objective from the algorithm
-    res = algorithm.result()
+    res = copy.deepcopy(algorithm.result())
 
     res.F = 1 / res.F
     print(res.F)
