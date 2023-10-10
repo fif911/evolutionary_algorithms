@@ -193,7 +193,6 @@ if __name__ == '__main__':
         if len(CLUSTER) >= 6:
             env.update_parameter('randomini', "no")
         else:
-            # randomly vary
             env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
         print(f"Cluster (currently beating): {CLUSTER}")  # best performing solution beats these enemies
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
