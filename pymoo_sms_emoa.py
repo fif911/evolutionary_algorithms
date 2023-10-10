@@ -29,8 +29,8 @@ from pymoo.visualization.scatter import Scatter
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 0
-N_GENERATIONS_LEVEL_2 = 50
+N_GENERATIONS_LEVEL_1 = 5
+N_GENERATIONS_LEVEL_2 = 5
 POP_SIZE = 50
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -71,12 +71,12 @@ class objectives(Problem):
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
-            
+
             if enemy in [2, 5, 7, 8]:
-                #self.env.update_parameter('level', 1)
+                # self.env.update_parameter('level', 1)
                 self.env.update_parameter('randomini', "no")
             else:
-                #self.env.update_parameter('level', 1)
+                # self.env.update_parameter('level', 1)
                 self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
@@ -124,7 +124,7 @@ def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     plot.show()
 
 
-def main(env: Environment, n_genes: int, population = None):
+def main(env: Environment, n_genes: int):
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -133,7 +133,7 @@ def main(env: Environment, n_genes: int, population = None):
     )
 
     if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
-        env.update_parameter("level", 1)
+        env.update_parameter("randomini", "yes")
         algorithm = SMSEMOA(pop_size=POP_SIZE, )
         algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_1), verbose=False)
 
@@ -145,7 +145,7 @@ def main(env: Environment, n_genes: int, population = None):
         first_algorithm_evaluations = 0
 
     print("Setting the enemy level to 2")
-    env.update_parameter("level", 2)
+    env.update_parameter("randomini", 'no')
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
 
@@ -187,10 +187,7 @@ if __name__ == '__main__':
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
-    env.update_parameter('level', 1)
     pop = main(env, n_genes)
-    # env.update_parameter('level', 2)
-    # pop = main(env, n_genes, population=pop)
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
