@@ -26,7 +26,7 @@ from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
 N_GENERATIONS = 25
-POP_SIZE = 30
+POP_SIZE = 50
 
 global ENEMIES
 global CLUSTER
@@ -163,7 +163,7 @@ def main(env: Environment, n_genes: int, population=None):
     # for i, solution in enumerate(best_solutions):
     #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
-    return [i.x for i in algorithm.ask()], best_not_beaten
+    return [i.x for i in algorithm.ask()], best_not_beaten, best_solutions
 
 
 if __name__ == '__main__':
@@ -181,11 +181,13 @@ if __name__ == '__main__':
     # TODO: If we find solution that beats 6 or more enemies, we can set randomini to "no" to ensure that they are
     # proper solutions. Also we may vary this parameter during the training process
 
-    pop, best_not_beaten = main(env, n_genes)
+    pop, best_not_beaten, best_solutions = main(env, n_genes)
     evaluations = POP_SIZE * N_GENERATIONS
     randomini_prob = 0.5
 
+    i = 1
     while ENEMIES.size != 0:
+        print("Iteration: ", i)
         # Set enemies
         CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
         if not CLUSTER:
@@ -194,16 +196,25 @@ if __name__ == '__main__':
             env.update_parameter('randomini', "no")
         else:
             env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
+        if len(CLUSTER) == 8:
+            # there is a solution that beats all enemies
+            # save the best solutions to files
+            for i, solution in enumerate(best_solutions):
+                np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
+
         print(f"Cluster (currently beating): {CLUSTER}")  # best performing solution beats these enemies
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
         print(f"Enemies (training to beat): {ENEMIES}")  # the population is training to beat these enemies
         print(f"Random initial position: {env.randomini}")
-        # Update number of evaluations
-        evaluations += POP_SIZE * N_GENERATIONS
-        pop, best_not_beaten = main(env, n_genes, population=pop)
         print(f"Enemies beaten in current population: {len(CLUSTER)}/8")
         print(f"Objective Function Evaluations: {evaluations}")
+
+        # Update number of evaluations
+        evaluations += POP_SIZE * N_GENERATIONS
+        pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop)
+
+        i += 1
         print("----")
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
