@@ -80,18 +80,10 @@ class objectives(Problem):
                 dict_enemies[enemy].append(
                     simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
 
-        # Return fitness outputs for enemies
-        # objectives_fitness = {
-        #     "objective_1": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-        #                     range(POP_SIZE)],
-        #     "objective_2": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-        #                     range(POP_SIZE)],
-        #     "objective_3": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-        #                     range(POP_SIZE)],
-        # }
         objectives_fitness = {
-            "objective_1": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in CLUSTER]) for ind_id in
-                            range(POP_SIZE)]
+            "objective_to_keep_current_progress": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in CLUSTER]) for
+                                                   ind_id in
+                                                   range(POP_SIZE)]
         }
 
         for ienemy, enemy in enumerate(ENEMIES):
@@ -169,7 +161,7 @@ def main(env: Environment, n_genes: int, population=None, crossover=SimulatedBin
     # # save the best solutions to files
     # for i, solution in enumerate(best_solutions):
     #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
-
+    # TODO: Check diversity of the population
     return [i.x for i in algorithm.ask()], best_not_beaten, best_solutions
 
 
@@ -207,17 +199,13 @@ if __name__ == '__main__':
             crossover = NNCrossover()
         else:
             crossover = SimulatedBinaryCrossover()
-        if len(CLUSTER) == 8:
-            # there is a solution that beats all enemies
-            # save the best solutions to files
-            for i, solution in enumerate(best_solutions):
-                np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
         print(f"Cluster (currently beating): {CLUSTER}")  # best performing solution beats these enemies
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
         print(f"Enemies (training to beat): {ENEMIES}")  # the population is training to beat these enemies
         print(f"Random initial position: {env.randomini}")
+        print(f"Crossover type: {crossover.__class__.__name__}")
         print(f"Enemies beaten in current population: {len(CLUSTER)}/8")
         print(f"Objective Function Evaluations: {evaluations}")
 
@@ -230,6 +218,9 @@ if __name__ == '__main__':
         if i > TOTAL_ITERATIONS:
             break
         print("----")
+
+    for i, solution in enumerate(best_solutions):
+        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
