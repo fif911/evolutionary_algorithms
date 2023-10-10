@@ -11,6 +11,8 @@ from matplotlib import pyplot as plt
 from demo_controller import player_controller
 from evoman.environment import Environment
 
+from utils import verify_solution
+
 # ---- Initialization
 # Set headless
 headless = True
@@ -546,11 +548,11 @@ parent_selection_strategy = "Fitness Proportional"  # Rank or Fitness Proportion
 elitism = 13  # Elitism, int --> if selection_strategy is not Rank
 mutation_prob = 0.04  # Mutation probability
 
-MUTATION_STRATEGY = "self-adaptive uncorrelated n stepsizes"  # uniform, non-uniform, self-adaptive uncorrelated 1 stepsize, self-adaptive uncorrelated n stepsizes
+MUTATION_STRATEGY = "self-adaptive uncorrelated 1 stepsize"  # uniform, non-uniform, self-adaptive uncorrelated 1 stepsize, self-adaptive uncorrelated n stepsizes
 # ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]  # all enemies
-ENEMIES = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]  # 3, 6, 7 are Selected enemies for the final report
+ENEMIES = [8]  # 3, 6, 7 are Selected enemies for the final report
 
-REPEATS = 10  # Number of times to repeat the experiment
+REPEATS = 1  # Number of times to repeat the experiment
 
 if __name__ == '__main__':
     print("Starting...")
@@ -564,9 +566,9 @@ if __name__ == '__main__':
             _n_evals = 0  # reset the number of evaluations
             print(f"-- Enemy: #{enemy}) Starting repeat #{repeat}")
             env = Environment(experiment_name=experiment_name,
-                              enemies=enemy,
+                              enemies=[enemy],
                               playermode="ai",
-                              multiplemode="yes",
+                              multiplemode="no",
                               player_controller=player_controller(n_hidden_neurons),
                               enemymode="static",
                               level=2,
@@ -613,6 +615,7 @@ if __name__ == '__main__':
                 pickle.dump(stats, f)
 
             np.savetxt(f"{experiment_name}/best_enemy_{enemy}_{repeat}.txt", best_solution)
+            verify_solution(env, best_solution)
 
         # make vector of average fitness values
         fitness_max = np.average(np.array(avg_fitness_max), axis=0)
