@@ -26,9 +26,9 @@ from pymoo.visualization.scatter import Scatter
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 30
-N_GENERATIONS_LEVEL_2 = 30
-POP_SIZE = 20
+N_GENERATIONS_LEVEL_1 = 50
+N_GENERATIONS_LEVEL_2 = 50
+POP_SIZE = 100
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -37,6 +37,7 @@ experiment_name = 'pymoo_sms_emoa'
 solution_file_name = 'pymoo_sms_emoa_best'
 
 initialise_script(experiment_name=experiment_name)
+np.set_printoptions(suppress=True)
 
 
 class objectives(Problem):
@@ -62,7 +63,9 @@ class objectives(Problem):
         #        another enemy)
         #        weighted average is another option, but then we have another problem of how to weight the enemies
         """
-
+        if POP_SIZE != len(x):
+            print(f"WARNING: POP_SIZE != len(x) in evaluation step (this happens sometimes do not see why)\n"
+                  f"pop size: {POP_SIZE}; len x:{len(x)}")
         # Initialize
         dict_enemies = {}
         # Get fitness for each enemy
@@ -70,17 +73,17 @@ class objectives(Problem):
             self.env.update_parameter('enemies', [enemy])
 
             dict_enemies[enemy] = []
-            for individual_id in range(POP_SIZE):
+            for individual_id in range(len(x)):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
 
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
             "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-                                 range(POP_SIZE)],
+                                 range(len(x))],
             "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -152,7 +155,8 @@ def main(env: Environment, n_genes: int):
     res = algorithm.result()
 
     res.F = 1 / res.F
-    print(res.F)
+    print("Final population fitness: ")
+    print(res.F, )
 
     max_enemies_beaten = 0
     best_solutions = []
