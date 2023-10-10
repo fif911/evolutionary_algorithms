@@ -194,10 +194,6 @@ if __name__ == '__main__':
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
         print(f"Enemies: {ENEMIES}")
-        # Set level
-        level = np.random.choice([1, 2, 3])
-        env.update_parameter('level', level)
-        print(f"Enemy Level: {level}")
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten = main(env, n_genes, population=pop)
