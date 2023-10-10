@@ -25,13 +25,13 @@ n_hidden_neurons = 10
 env = Environment(experiment_name=experiment_name,
                   playermode="ai",
                   player_controller=player_controller(n_hidden_neurons),
-                  speed="fastest",
+                  speed="normal",
                   enemymode="static",
                   level=2,
                   logs="off",
                   visuals=True)
 
-sol = np.loadtxt('solutions_beats_5_enemies/pymoo_sms_emoa_best.txt_12')
+sol = np.loadtxt('cma_v2_test/cma_v2_best.txt')
 
 # tests saved demo solutions for each enemy
 for en in range(1, 9):

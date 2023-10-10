@@ -17,9 +17,9 @@ import matplotlib.pyplot as plt
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 10
+N_GENERATIONS = 50
 POP_SIZE = 50
-MAX_EVALUATIONS = 100_000
+MAX_EVALUATIONS = 20_000
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 MODE = "train"  # train or test
@@ -37,13 +37,13 @@ def solution_search(env, n_genes):
     es = cma.CMAEvolutionStrategy(n_genes * [0], 0.8,
                                   inopts={'bounds': [-1, 1],
                                           'popsize': POP_SIZE,
-                                          # 'maxiter': N_GENERATIONS,
+                                          'maxiter': N_GENERATIONS,
                                           'maxfevals': MAX_EVALUATIONS,
                                           })
 
     while not es.stop():
         X = es.ask()  # get list of new solutions
-        fit = [simulation(env, x) for x in X]  # evaluate each solution
+        fit = [simulation(env, x, inverted_fitness=True) for x in X]  # evaluate each solution
         print(
             f"Generation {es.countiter}:\t FEvals: {es.countevals},"
             f"\t\t Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
@@ -55,9 +55,6 @@ def solution_search(env, n_genes):
 
         es.tell(X, fit)  # besides for termination only the ranking in fit is used
         print("Best fitness: ", 1 / es.best.f)
-        print("Enemies current generation: ", max(n_enemies))
-        es.logger.add()  # write data to disc to be plotted
-        es.disp()
     print('termination:', es.stop())
 
     best_solution = es.best.x
@@ -71,13 +68,9 @@ def solution_search(env, n_genes):
 
     verify_solution(env, best_solution)
 
-    es.result_pretty()
-    cma.plot()
-    plt.show()
-
 
 if __name__ == "__main__":
-    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
+    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons, random_init_place=True)
 
     if MODE == "train":
         time_start = time.time()
