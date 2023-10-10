@@ -25,6 +25,7 @@ from pymoo.operators.crossover.hux import HalfUniformCrossover
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
+from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
 N_GENERATIONS_LEVEL_1 = 0
@@ -137,7 +138,7 @@ def main(env: Environment, n_genes: int):
 
     print("Setting the enemy level to 2")
     env.update_parameter("level", 2)
-    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population)
+    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
 
     algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")

@@ -72,15 +72,15 @@ class NNCrossover(Crossover):
         self.bias = Real(bias, bounds=(0.1, 0.9), strict=(0.0, 1.0))
 
     def _do(self, problem, X, **kwargs):
-        _, n_matings, n_var = X.shape
+        _, n_mating_parents, n_genes = X.shape
 
-        bias = get(self.bias, size=n_matings)
-        M = mut_binomial(n_matings, n_var, bias, at_least_once=True)
+        bias = get(self.bias, size=n_mating_parents)
+        M = mut_binomial(n_mating_parents, n_genes, bias, at_least_once=True)
 
-        if self.n_offsprings == 1:
-            Xp = X[0].copy(X)
-            Xp[~M] = X[1][~M]
-        elif self.n_offsprings == 2:
+        # if self.n_offsprings == 1:
+        #     Xp = X[0].copy(X)
+        #     Xp[~M] = X[1][~M]
+        if self.n_offsprings == 2:
             Xp = np.copy(X)
             Xp[0][~M] = X[1][~M]
             Xp[1][~M] = X[0][~M]
