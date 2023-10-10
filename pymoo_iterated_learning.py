@@ -25,8 +25,8 @@ from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
-N_GENERATIONS = 30
-POP_SIZE = 5
+N_GENERATIONS = 25
+POP_SIZE = 30
 
 global ENEMIES
 global CLUSTER
