@@ -278,7 +278,6 @@ class Environment(object):
     # loads a state for environment from files
     def load_state(self):
 
-
         try:
 
             # loads parameters
@@ -604,12 +603,17 @@ class Environment(object):
             venemylife.append(enemylife)
             vtime.append(time)
 
+        # N enemies (added by us)
+        n_enemies = venemylife.count(0)
+
         vfitness = self.cons_multi(numpy.array(vfitness))
         vplayerlife = self.cons_multi(numpy.array(vplayerlife))
         venemylife = self.cons_multi(numpy.array(venemylife))
         vtime = self.cons_multi(numpy.array(vtime))
 
-        return    vfitness, vplayerlife, venemylife, vtime
+
+
+        return    vfitness, vplayerlife, venemylife, vtime, n_enemies
 
 
     # checks objective mode

@@ -13,10 +13,11 @@ import time
 
 import cma
 import numpy as np
+import matplotlib.pyplot as plt
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 50
+N_GENERATIONS = 10
 POP_SIZE = 50
 MAX_EVALUATIONS = 100_000
 
@@ -53,6 +54,10 @@ def solution_search(env, n_genes):
         # X = [np.random.normal(0, 0, len(x)) for x in X]
 
         es.tell(X, fit)  # besides for termination only the ranking in fit is used
+        print("Best fitness: ", 1 / es.best.f)
+        print("Enemies current generation: ", max(n_enemies))
+        es.logger.add()  # write data to disc to be plotted
+        es.disp()
     print('termination:', es.stop())
 
     best_solution = es.best.x
@@ -65,6 +70,10 @@ def solution_search(env, n_genes):
     np.savetxt(f'{experiment_name}/{solution_file_name}', best_solution)
 
     verify_solution(env, best_solution)
+
+    es.result_pretty()
+    cma.plot()
+    plt.show()
 
 
 if __name__ == "__main__":

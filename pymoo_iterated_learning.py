@@ -70,12 +70,6 @@ class objectives(Problem):
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
 
-            if enemy in [2, 5, 7, 8]:
-                # self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
-            else:
-                # self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
@@ -153,6 +147,7 @@ def main(env: Environment, n_genes: int, population=None):
     best_solutions = []
     best_not_beaten = []
     env.update_parameter('level', 2)
+    env.update_parameter('randomini', "no")
     for i, x in enumerate(res.X):
         enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
                                                                 print_results=False)
@@ -181,6 +176,7 @@ if __name__ == '__main__':
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
     env.update_parameter('level', 2)
+    env.update_parameter('randomini', "yes")
 
     pop, best_not_beaten = main(env, n_genes)
     evaluations = POP_SIZE * N_GENERATIONS
@@ -194,10 +190,6 @@ if __name__ == '__main__':
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
         print(f"Enemies: {ENEMIES}")
-        # Set level
-        level = np.random.choice([1, 2, 3])
-        env.update_parameter('level', level)
-        print(f"Enemy Level: {level}")
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten = main(env, n_genes, population=pop)

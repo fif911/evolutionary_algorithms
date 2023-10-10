@@ -16,6 +16,7 @@ Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
 import copy
 import time
 
+from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
@@ -70,6 +71,13 @@ class objectives(Problem):
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
+            
+            if enemy in [2, 5, 7, 8]:
+                #self.env.update_parameter('level', 1)
+                self.env.update_parameter('randomini', "no")
+            else:
+                #self.env.update_parameter('level', 1)
+                self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
@@ -116,7 +124,7 @@ def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     plot.show()
 
 
-def main(env: Environment, n_genes: int):
+def main(env: Environment, n_genes: int, population = None):
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -179,7 +187,10 @@ if __name__ == '__main__':
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
-    main(env, n_genes)
+    env.update_parameter('level', 1)
+    pop = main(env, n_genes)
+    # env.update_parameter('level', 2)
+    # pop = main(env, n_genes, population=pop)
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
