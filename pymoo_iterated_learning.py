@@ -12,6 +12,8 @@ import copy
 import os
 import time
 
+from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
+
 from nn_crossover import NNCrossover
 from matplotlib import pyplot as plt
 import numpy as np
@@ -26,8 +28,8 @@ from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
 TOTAL_ITERATIONS = 100
-N_GENERATIONS = 25
-POP_SIZE = 50
+N_GENERATIONS = 10
+POP_SIZE = 20
 
 global ENEMIES
 global CLUSTER
@@ -119,7 +121,7 @@ def plot_pareto_fronts(res):
     plot.show()
 
 
-def main(env: Environment, n_genes: int, population=None):
+def main(env: Environment, n_genes: int, population=None, crossover=SimulatedBinaryCrossover()):
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -128,10 +130,10 @@ def main(env: Environment, n_genes: int, population=None):
     )
 
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, crossover=NNCrossover())
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, crossover=crossover)
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population, crossover=NNCrossover())
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population, crossover=crossover)
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
@@ -185,7 +187,7 @@ if __name__ == '__main__':
 
     pop, best_not_beaten, best_solutions = main(env, n_genes)
     evaluations = POP_SIZE * N_GENERATIONS
-    randomini_prob = 0.5
+    randomini_prob = 0
 
     i = 1
     while ENEMIES.size != 0:
@@ -198,6 +200,10 @@ if __name__ == '__main__':
             env.update_parameter('randomini', "no")
         else:
             env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
+        if len(CLUSTER) >= 6:  # switch crossover type to try to preserve traits
+            crossover = NNCrossover()
+        else:
+            crossover = SimulatedBinaryCrossover()
         if len(CLUSTER) == 8:
             # there is a solution that beats all enemies
             # save the best solutions to files
@@ -214,7 +220,7 @@ if __name__ == '__main__':
 
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
-        pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop)
+        pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop, crossover=crossover)
 
         i += 1
         if i > TOTAL_ITERATIONS:
