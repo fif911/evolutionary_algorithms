@@ -222,6 +222,7 @@ if __name__ == '__main__':
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop, crossover=crossover)
+        print("best solutions do not beat: ", best_not_beaten)
 
         i += 1
         if i > TOTAL_ITERATIONS:
