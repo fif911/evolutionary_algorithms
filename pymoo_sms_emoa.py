@@ -122,8 +122,6 @@ def main(env: Environment, n_genes: int):
         enemies=ENEMIES,
         n_objectives=3
     )
-    # algorithm = AGEMOEA(pop_size=POP_SIZE)
-    # algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
 
     if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
         env.update_parameter("level", 1)
