@@ -37,13 +37,13 @@ def solution_search(env, n_genes):
     es = cma.CMAEvolutionStrategy(n_genes * [0], 0.8,
                                   inopts={'bounds': [-1, 1],
                                           'popsize': POP_SIZE,
-                                          # 'maxiter': N_GENERATIONS,
-                                          'maxfevals': MAX_EVALUATIONS,
+                                          'maxiter': N_GENERATIONS,
+                                          # 'maxfevals': MAX_EVALUATIONS,
                                           })
 
     while not es.stop():
         X = es.ask()  # get list of new solutions
-        fit = [simulation(env, x) for x in X]  # evaluate each solution
+        fit = [simulation(env, x, inverted_fitness=True) for x in X]  # evaluate each solution
         print(
             f"Generation {es.countiter}:\t FEvals: {es.countevals},"
             f"\t\t Best fitness: {min(fit):.4f},\t mean: {np.mean(fit):.4f},\t "
@@ -55,9 +55,6 @@ def solution_search(env, n_genes):
 
         es.tell(X, fit)  # besides for termination only the ranking in fit is used
         print("Best fitness: ", 1 / es.best.f)
-        print("Enemies current generation: ", max(n_enemies))
-        es.logger.add()  # write data to disc to be plotted
-        es.disp()
     print('termination:', es.stop())
 
     best_solution = es.best.x
@@ -71,7 +68,6 @@ def solution_search(env, n_genes):
 
     verify_solution(env, best_solution)
 
-    es.result_pretty()
     cma.plot()
     plt.show()
 

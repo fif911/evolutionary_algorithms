@@ -7,7 +7,7 @@ from evoman.environment import Environment
 from demo_controller import player_controller
 
 
-def simulation(env, xm: np.ndarray, inverted_fitness=True, verbose=False):
+def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False):
     """Run one episode and return the inverted fitness for minimization problem
 
     Fitness function:
