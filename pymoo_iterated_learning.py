@@ -26,7 +26,7 @@ from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
 N_GENERATIONS = 30
-POP_SIZE = 20
+POP_SIZE = 5
 
 global ENEMIES
 global CLUSTER
@@ -148,7 +148,6 @@ def main(env: Environment, n_genes: int, population=None):
     best_solutions = []
     best_not_beaten = []
     env.update_parameter('level', 2)
-    env.update_parameter('randomini', "no")
     for i, x in enumerate(res.X):
         enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
                                                                 print_results=False)
@@ -174,27 +173,37 @@ if __name__ == '__main__':
     ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
 
     print("Running...")
+    env: Environment
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
     env.update_parameter('level', 2)
-    env.update_parameter('randomini', "yes")
+    env.update_parameter('randomini', "yes")  # random initial position. This is good for diversity
+    # TODO: If we find solution that beats 6 or more enemies, we can set randomini to "no" to ensure that they are
+    # proper solutions. Also we may vary this parameter during the training process
 
     pop, best_not_beaten = main(env, n_genes)
     evaluations = POP_SIZE * N_GENERATIONS
+    randomini_prob = 0.5
 
     while ENEMIES.size != 0:
         # Set enemies
         CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
         if not CLUSTER:
             CLUSTER = [np.random.choice(best_not_beaten[0])]
-        print(f"Cluster: {CLUSTER}")  # best performing solution beats these enemies
+        if len(CLUSTER) >= 6:
+            env.update_parameter('randomini', "no")
+        else:
+            # randomly vary
+            env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
+        print(f"Cluster (currently beating): {CLUSTER}")  # best performing solution beats these enemies
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
-        print(f"Enemies: {ENEMIES}")  # the population is training to beat these enemies
+        print(f"Enemies (training to beat): {ENEMIES}")  # the population is training to beat these enemies
+        print(f"Random initial position: {env.randomini}")
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten = main(env, n_genes, population=pop)
-        print(f"Number of enemies beaten in current population: {len(CLUSTER)}")
+        print(f"Enemies beaten in current population: {len(CLUSTER)}/8")
         print(f"Objective Function Evaluations: {evaluations}")
         print("----")
 
