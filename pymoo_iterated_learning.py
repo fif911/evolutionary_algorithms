@@ -25,6 +25,7 @@ from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
+TOTAL_ITERATIONS = 100
 N_GENERATIONS = 25
 POP_SIZE = 50
 
@@ -215,6 +216,8 @@ if __name__ == '__main__':
         pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop)
 
         i += 1
+        if i > TOTAL_ITERATIONS:
+            break
         print("----")
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
