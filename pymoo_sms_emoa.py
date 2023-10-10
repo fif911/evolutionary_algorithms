@@ -13,25 +13,22 @@ Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
 Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
 
 """
-import copy
 import time
 
-from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
-from pymoo.operators.crossover.hux import HalfUniformCrossover
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 5
-N_GENERATIONS_LEVEL_2 = 5
-POP_SIZE = 50
+N_GENERATIONS_LEVEL_1 = 30
+N_GENERATIONS_LEVEL_2 = 30
+POP_SIZE = 20
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -72,12 +69,6 @@ class objectives(Problem):
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
 
-            if enemy in [2, 5, 7, 8]:
-                # self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
-            else:
-                # self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
@@ -133,18 +124,24 @@ def main(env: Environment, n_genes: int):
     )
 
     if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
+        print("Setting the random initialisation position to Yes")
         env.update_parameter("randomini", "yes")
         algorithm = SMSEMOA(pop_size=POP_SIZE, )
         algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_1), verbose=False)
 
         algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_1")
-        next_population = np.array([i.X for i in algorithm.pop])
+        # get the best individuals from results and population
+        # and pass further to the next level
+        _population = list(algorithm.result().X)
+        _population.extend(list(algorithm.pop.get("X")))
+        _population = _population[:POP_SIZE]
+        next_population = np.array(_population)
         first_algorithm_evaluations = algorithm.evaluator.n_eval
     else:
         next_population = FloatRandomSampling()
         first_algorithm_evaluations = 0
 
-    print("Setting the enemy level to 2")
+    print("Setting the random initialisation position to No")
     env.update_parameter("randomini", 'no')
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
