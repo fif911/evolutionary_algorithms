@@ -7,13 +7,9 @@ https://pymoo.org/algorithms/list.html
 Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 Docs link: https://pymoo.org/algorithms/moo/sms.html
-
-Algorithm: AGE-MOEA
-Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
-Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
-
 """
 import copy
+import os
 import time
 
 from matplotlib import pyplot as plt
@@ -22,23 +18,26 @@ import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
-from pymoo.operators.crossover.hux import HalfUniformCrossover
-from pymoo.operators.sampling.rnd import FloatRandomSampling
+from pymoo.util.running_metric import RunningMetricAnimation
 from pymoo.visualization.scatter import Scatter
 
-from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
+from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS_LEVEL_1 = 0
-N_GENERATIONS_LEVEL_2 = 50
-POP_SIZE = 50
-ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+np.random.seed(1)
+N_GENERATIONS = 10
+POP_SIZE = 20
+
+global ENEMIES
+global CLUSTER
 
 n_hidden_neurons = 10
 
 experiment_name = 'pymoo_sms_emoa'
-solution_file_name = 'pymoo_sms_emoa_best'
+solution_file_name = 'pymoo_sms_emoa_best.txt'
+if not os.path.exists(experiment_name):
+    os.makedirs(experiment_name)
 
-initialise_script(experiment_name=experiment_name)
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 class objectives(Problem):
@@ -70,128 +69,141 @@ class objectives(Problem):
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
-            
+
             if enemy in [2, 5, 7, 8]:
-                #self.env.update_parameter('level', 1)
+                # self.env.update_parameter('level', 1)
                 self.env.update_parameter('randomini', "no")
             else:
-                #self.env.update_parameter('level', 1)
+                # self.env.update_parameter('level', 1)
                 self.env.update_parameter('randomini', "no")
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
                 dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
 
         # Return fitness outputs for enemies
+        # objectives_fitness = {
+        #     "objective_1": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
+        #                     range(POP_SIZE)],
+        #     "objective_2": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+        #                     range(POP_SIZE)],
+        #     "objective_3": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
+        #                     range(POP_SIZE)],
+        # }
         objectives_fitness = {
-            "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-                               range(POP_SIZE)],
-            "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-                                 range(POP_SIZE)],
-            "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-                               range(POP_SIZE)],
+            "objective_1": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in CLUSTER]) for ind_id in
+                            range(POP_SIZE)]
         }
+
+        for ienemy, enemy in enumerate(ENEMIES):
+            objectives_fitness[f"objective_{ienemy + 2}"] = dict_enemies[enemy]
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def plot_pareto_fronts(res, best_solutions_idx: list[int]):
+def plot_pareto_fronts(res):
     """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
-    print(f"Plotting {res.F.shape[0]} solutions")
-
     plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
     plot.add(res.F, color="red")
-    plot.add(res.F[best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # for 3 objectives plot each pair of pareto fronts
     # Hard vs Medium
     plot = Scatter(labels=["Hard enemies", "Medium Enemies"], title="Pareto Front")
     plot.add(res.F[:, [0, 1]], color="red")
-    plot.add(res.F[:, [0, 1]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # Hard vs Easy
     plot = Scatter(labels=["Hard enemies", "Easy Enemies"], title="Pareto Front")
     plot.add(res.F[:, [0, 2]], color="red")
-    plot.add(res.F[:, [0, 2]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
     # Medium vs Easy
     plot = Scatter(labels=["Medium enemies", "Easy Enemies"], title="Pareto Front")
     plot.add(res.F[:, [1, 2]], color="red")
-    plot.add(res.F[:, [1, 2]][best_solutions_idx], color="blue", s=80, label="Best solutions")
     plot.show()
 
 
-def main(env: Environment, n_genes: int, population = None):
+def main(env: Environment, n_genes: int, population=None):
     problem = objectives(
         env=env,
         n_genes=n_genes,
-        enemies=ENEMIES,
-        n_objectives=3
+        enemies=[1, 2, 3, 4, 5, 6, 7, 8],
+        n_objectives=len(ENEMIES) + (len(CLUSTER) > 0)
     )
-    # algorithm = AGEMOEA(pop_size=POP_SIZE)
-    # algorithm = AGEMOEA(pop_size=POP_SIZE, crossover=HalfUniformCrossover(prob_hux=0.3))
 
-    if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
-        env.update_parameter("level", 1)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, )
-        algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_1), verbose=False)
-
-        algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_1")
-        next_population = np.array([i.X for i in algorithm.pop])
-        first_algorithm_evaluations = algorithm.evaluator.n_eval
+    if population is None:
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1)
     else:
-        next_population = FloatRandomSampling()
-        first_algorithm_evaluations = 0
+        population = np.array(population)
+        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population)
+    # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
+    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
-    print("Setting the enemy level to 2")
-    env.update_parameter("level", 2)
-    algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population)
-    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
-
-    algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")
+    while algorithm.has_next():
+        pop = algorithm.ask()
+        algorithm.evaluator.eval(problem, pop)
+        algorithm.tell(infills=pop)
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
 
     res.F = 1 / res.F
-    print(res.F)
 
     max_enemies_beaten = 0
     best_solutions = []
-    best_solutions_idx = []
+    best_not_beaten = []
+    env.update_parameter('level', 2)
     for i, x in enumerate(res.X):
-        print(f"------ Solution {i + 1} -----")
-        enemies_beaten = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8])
-        if enemies_beaten > max_enemies_beaten:
-            max_enemies_beaten = enemies_beaten
+        enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
+                                                                print_results=False)
+        if len(enemies_beaten) > max_enemies_beaten:
+            max_enemies_beaten = len(enemies_beaten)
             best_solutions = [x]  # reset the list because we found a better performing solution
-            best_solutions_idx = [i]
-        elif enemies_beaten == max_enemies_beaten:
+            best_not_beaten = [enemies_not_beaten]
+        elif len(enemies_beaten) == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
-            best_solutions_idx.append(i)
+            best_not_beaten.append(enemies_not_beaten)
 
-    print(f"Most enemies beaten: {max_enemies_beaten}; Number of these solutions: {len(best_solutions)}")
-    print(f"Individuals evaluated: {algorithm.evaluator.n_eval + first_algorithm_evaluations}")
+    # # save the best solutions to files
+    # for i, solution in enumerate(best_solutions):
+    #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
-    # save the best solutions to files
-    for i, solution in enumerate(best_solutions):
-        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}.txt', solution)
-
-    plot_pareto_fronts(res, best_solutions_idx)
+    return [i.x for i in algorithm.ask()], best_not_beaten
 
 
 if __name__ == '__main__':
     time_start = time.time()
-    print("Running pymoo_sms_emoa.py")
+
+    CLUSTER = [1]
+    ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
+
+    print("Running...")
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
+    env.update_parameter('level', 2)
 
-    env.update_parameter('level', 1)
-    pop = main(env, n_genes)
-    # env.update_parameter('level', 2)
-    # pop = main(env, n_genes, population=pop)
+    pop, best_not_beaten = main(env, n_genes)
+    evaluations = POP_SIZE * N_GENERATIONS
+
+    while ENEMIES.size != 0:
+        # Set enemies
+        CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
+        if not CLUSTER:
+            CLUSTER = [np.random.choice(best_not_beaten[0])]
+        print(f"Cluster: {CLUSTER}")
+        ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
+        ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
+        print(f"Enemies: {ENEMIES}")
+        # Set level
+        level = np.random.choice([1, 2, 3])
+        env.update_parameter('level', level)
+        print(f"Enemy Level: {level}")
+        # Update number of evaluations
+        evaluations += POP_SIZE * N_GENERATIONS
+        pop, best_not_beaten = main(env, n_genes, population=pop)
+        print(f"Enemies beaten: {len(CLUSTER)}")
+        print(f"Evaluations: {evaluations}")
+        print("----")
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
