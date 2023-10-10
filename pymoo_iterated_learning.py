@@ -190,7 +190,7 @@ if __name__ == '__main__':
     CLUSTER = [1]
     ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
 
-    print("Running pymoo_sms_emoa.py")
+    print("Running...")
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
     env.update_parameter('level', 2)
