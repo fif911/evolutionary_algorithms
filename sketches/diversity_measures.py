@@ -43,7 +43,7 @@ def genotypic_diversity(population):
     num_genes = len(population[0])
 
     # Count the frequency of each unique gene across the population.
-
+    gene_frequencies = {}
     for genotype in population:
         for gene in genotype:
             gene_frequencies[gene] = gene_frequencies.get(gene, 0) + 1
