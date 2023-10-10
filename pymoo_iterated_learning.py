@@ -187,15 +187,15 @@ if __name__ == '__main__':
         CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
         if not CLUSTER:
             CLUSTER = [np.random.choice(best_not_beaten[0])]
-        print(f"Cluster: {CLUSTER}")
+        print(f"Cluster: {CLUSTER}")  # best performing solution beats these enemies
         ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
         ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
-        print(f"Enemies: {ENEMIES}")
+        print(f"Enemies: {ENEMIES}")  # the population is training to beat these enemies
         # Update number of evaluations
         evaluations += POP_SIZE * N_GENERATIONS
         pop, best_not_beaten = main(env, n_genes, population=pop)
-        print(f"Enemies beaten: {len(CLUSTER)}")
-        print(f"Evaluations: {evaluations}")
+        print(f"Number of enemies beaten in current population: {len(CLUSTER)}")
+        print(f"Objective Function Evaluations: {evaluations}")
         print("----")
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
