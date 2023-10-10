@@ -190,7 +190,7 @@ if __name__ == '__main__':
         CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
         if not CLUSTER:
             CLUSTER = [np.random.choice(best_not_beaten[0])]
-        if len(CLUSTER) >= 6:
+        if len(CLUSTER) >= 7:
             env.update_parameter('randomini', "no")
         else:
             env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
