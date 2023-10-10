@@ -17,9 +17,9 @@ import matplotlib.pyplot as plt
 
 from utils import simulation, verify_solution, init_env
 
-N_GENERATIONS = 10
+N_GENERATIONS = 50
 POP_SIZE = 50
-MAX_EVALUATIONS = 100_000
+MAX_EVALUATIONS = 20_000
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 MODE = "train"  # train or test
@@ -38,7 +38,7 @@ def solution_search(env, n_genes):
                                   inopts={'bounds': [-1, 1],
                                           'popsize': POP_SIZE,
                                           'maxiter': N_GENERATIONS,
-                                          # 'maxfevals': MAX_EVALUATIONS,
+                                          'maxfevals': MAX_EVALUATIONS,
                                           })
 
     while not es.stop():
@@ -68,12 +68,9 @@ def solution_search(env, n_genes):
 
     verify_solution(env, best_solution)
 
-    cma.plot()
-    plt.show()
-
 
 if __name__ == "__main__":
-    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
+    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons, random_init_place=True)
 
     if MODE == "train":
         time_start = time.time()

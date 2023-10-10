@@ -50,12 +50,14 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
 #     return enemies_beaten
 
 
-def verify_solution(env, best_solution, enemies: Optional[list[int]] = None, print_results=True, verbose=False):
+def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]] = None, print_results=True,
+                    verbose=False):
     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
 
     if enemies is None:
         enemies = [1, 2, 3, 4, 5, 6, 7, 8]
     env.update_parameter("multiplemode", "no")
+    env.update_parameter("randomini", "no")
 
     enemies_beaten, enemies_not_beaten, enemy_lives = [], [], []
 
@@ -73,14 +75,14 @@ def verify_solution(env, best_solution, enemies: Optional[list[int]] = None, pri
             enemies_not_beaten.append(enemy_idx)
         enemy_lives.append(e)
     if print_results:
-        print(f"Enemies beaten: {enemies_beaten}/{len(enemies)}")
+        print(f"Enemies beaten: {enemies_beaten}; {len(enemies_beaten)}/{len(enemies)}")
     if verbose:
         return enemies_beaten, enemies_not_beaten, enemy_lives
     else:
         return len(enemies_beaten)
 
 
-def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
+def init_env(experiment_name, enemies, n_hidden_neurons, random_init_place: bool = False) -> (Environment, int):
     env = Environment(experiment_name=experiment_name,
                       enemies=enemies,
                       multiplemode="yes" if len(enemies) > 1 else "no",
@@ -90,7 +92,8 @@ def init_env(experiment_name, enemies, n_hidden_neurons) -> (Environment, int):
                       level=2,
                       speed="fastest",
                       logs="off",
-                      visuals=False)
+                      visuals=False,
+                      randomini="yes" if random_init_place else "no")
     n_genes = (env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
     return env, n_genes
 
