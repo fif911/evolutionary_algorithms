@@ -25,18 +25,29 @@ n_hidden_neurons = 10
 env = Environment(experiment_name=experiment_name,
                   playermode="ai",
                   player_controller=player_controller(n_hidden_neurons),
-                  speed="normal",
+                  speed="fastest",
                   enemymode="static",
                   level=2,
                   logs="off",
                   visuals=True)
 
-sol = np.loadtxt('cma_v2_test/cma_v2_best.txt')
+sol = np.loadtxt('solutions_beats_5_enemies/beats_8_enemies_2.txt')
 
 # tests saved demo solutions for each enemy
+won_all = True
+player_remaing_life_sum = 0
+total_time_sum = 0
 for en in range(1, 9):
     # Update the enemy
     env.update_parameter('enemies', [en])
     f, p, e, t = env.play(sol)
-    print(f" ----- Enemy {en} Player {p}; Enemy {e}; in {t} seconds. Won: {e == 0}")
-    print(f"Fitness: {f}; Inverted fitness: {1 / f}")
+    enemy_beaten = e == 0 and p > 0
+    print(f" ----- Enemy {en} Player {p}; Enemy {e}; in {t} seconds. Won: {enemy_beaten}")
+    # print(f"Fitness: {f}; Inverted fitness: {1 / f}")
+    won_all = won_all and enemy_beaten
+    player_remaing_life_sum += p
+    total_time_sum += t
+
+print(f"Won all: {won_all}")
+print(f"Sum of remaining player life: {player_remaing_life_sum:.2f}/800 (to be maximised)")
+print(f"Time took total: {total_time_sum} (to be minimised)")
