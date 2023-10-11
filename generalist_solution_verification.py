@@ -35,7 +35,7 @@ sol = np.loadtxt('solutions_beats_5_enemies/beats_8_enemies_2.txt')
 
 # tests saved demo solutions for each enemy
 won_all = True
-player_remaing_life_sum = 0
+player_remaining_life_sum = 0
 total_time_sum = 0
 for en in range(1, 9):
     # Update the enemy
@@ -45,9 +45,9 @@ for en in range(1, 9):
     print(f" ----- Enemy {en} Player {p}; Enemy {e}; in {t} seconds. Won: {enemy_beaten}")
     # print(f"Fitness: {f}; Inverted fitness: {1 / f}")
     won_all = won_all and enemy_beaten
-    player_remaing_life_sum += p
+    player_remaining_life_sum += p
     total_time_sum += t
 
 print(f"Won all: {won_all}")
-print(f"Sum of remaining player life: {player_remaing_life_sum:.2f}/800 (to be maximised)")
+print(f"Sum of remaining player life: {player_remaining_life_sum:.2f}/800 (to be maximised)")
 print(f"Time took total: {total_time_sum} (to be minimised)")
