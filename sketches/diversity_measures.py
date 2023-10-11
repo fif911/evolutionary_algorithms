@@ -23,7 +23,8 @@ def calc_similarity_matrix(population: np.array, threshold: float = 1, metric: s
     return square_matrix < threshold  # return similarity matrix with True/False values
 
 
-def number_of_similar_solutions_per_individual(population, threshold, metric="euclidean"):
+def number_of_similar_solutions_per_individual(population, threshold: float = 1, metric="euclidean",
+                                               prints=False) -> np.array:
     """Calculate the number of similar solutions per individual that are lower than the threshold
     for euclidial distance, 11 means they are diverse
     lower than 0.5 means they are exactly similar
@@ -36,7 +37,13 @@ def number_of_similar_solutions_per_individual(population, threshold, metric="eu
     population - 1 (all other individuals are similar to the current one)
     """
     similarity_matrix = calc_similarity_matrix(population, threshold, metric)
-    return np.sum(similarity_matrix, axis=1)
+    sim_solution_per_ind = np.sum(similarity_matrix, axis=1)
+    if prints:
+        print("Similar solutions per individual in format {id}: {amount}; ...: ", end="")
+        for i, sim in enumerate(sim_solution_per_ind):
+            print(f"{i}: {sim}", end=";  ")
+        print("\n")
+    return sim_solution_per_ind
 
 
 def _get_population():

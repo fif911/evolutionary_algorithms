@@ -25,6 +25,7 @@ from pymoo.core.problem import Problem
 from pymoo.util.running_metric import RunningMetricAnimation
 from pymoo.visualization.scatter import Scatter
 
+from sketches.diversity_measures import number_of_similar_solutions_per_individual
 from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)
@@ -161,7 +162,9 @@ def main(env: Environment, n_genes: int, population=None, crossover=SimulatedBin
     # # save the best solutions to files
     # for i, solution in enumerate(best_solutions):
     #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
-    # TODO: Check diversity of the population
+
+    sim_solution_per_ind = number_of_similar_solutions_per_individual(res.X, prints=True)
+    # TODO: add fitness sharing and fitness proportional parent selection
     return [i.x for i in algorithm.ask()], best_not_beaten, best_solutions
 
 
