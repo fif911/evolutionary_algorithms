@@ -361,7 +361,7 @@ if __name__ == '__main__':
         if len(destroyed) > best_performing:
             best_performing = len(destroyed)
             BEST_x = best_x[0]
-            np.savetxt("BEST_SOLUTION", BEST_x)
+            np.savetxt("BEST_SOLUTION.txt", BEST_x)
         for enemy in range(1, 9):
             if enemy in destroyed:
                 beaten[enemy] += 1
