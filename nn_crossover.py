@@ -86,6 +86,8 @@ class NNCrossover(Crossover):
             Xp = np.copy(X)
             Xp[0][~M] = X[1][~M]
             Xp[1][~M] = X[0][~M]
+            # Xp[0][M] = 0.5 * (X[0][M] + X[1][M])
+            # Xp[1][M] = 0.5 * (X[0][M] + X[1][M])
         else:
             raise Exception
 

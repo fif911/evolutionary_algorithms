@@ -17,6 +17,9 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     return_enemies: if True, return the player life, enemy life and time
     """
     f, p, e, t = env.play(pcont=xm)
+
+    f = (100 - e) + np.log(p + 0.001)
+
     if not inverted_fitness:
         return f  # return the original fitness
     if verbose:
