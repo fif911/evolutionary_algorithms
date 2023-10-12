@@ -19,8 +19,8 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     """
     f, p, e, t = env.play(pcont=xm)
     f = (100 - e) + np.log(p + 0.001)
-    if fitness_function is not None:
-        f = fitness_function(p, e, t)
+    if fitness_function:
+        f = fitness_function(player_life=p, enemy_life=e, time=t)
 
     if not inverted_fitness:
         return f  # return the original fitness
