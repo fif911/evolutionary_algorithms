@@ -11,6 +11,7 @@ Docs link: https://pymoo.org/algorithms/moo/sms.html
 import copy
 import os
 import time
+import uuid
 
 import numpy as np
 from evoman.environment import Environment
@@ -87,16 +88,17 @@ class objectives(Problem):
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def main(env: Environment, n_genes: int, population=None):
+def main(env: Environment, n_genes: int, population=None,
+         mutation_prob=0.6,
+         mutation_sigma=0.2,
+         crossover_prob=0.6
+         ):
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=[1, 2, 3, 4, 5, 6, 7, 8],
         n_objectives=len(ENEMIES) + (len(CLUSTER))
     )
-    mutation_prob = 0.1
-    mutation_sigma = 1
-    crossover_prob = 0.6
 
     if population is None:
         algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob=crossover_prob),
@@ -119,12 +121,9 @@ def main(env: Environment, n_genes: int, population=None):
     # obtain the result objective from the algorithm
     res = algorithm.result()
 
-    res.F = 1 / res.F
-
     max_enemies_beaten = 0
     best_solutions = []
-    best_not_beaten = []
-    best_x = []
+    best_solutions_do_not_beat = []
     env.update_parameter('level', 2)
     for i, x in enumerate(res.X):
         enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
@@ -132,30 +131,20 @@ def main(env: Environment, n_genes: int, population=None):
         if len(enemies_beaten) > max_enemies_beaten:
             max_enemies_beaten = len(enemies_beaten)
             best_solutions = [x]  # reset the list because we found a better performing solution
-            best_not_beaten = [enemies_not_beaten]
-            best_x = [x]
+            best_solutions_do_not_beat = [enemies_not_beaten]
         elif len(enemies_beaten) == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
-            best_not_beaten.append(enemies_not_beaten)
-            best_x.append(x)
+            best_solutions_do_not_beat.append(enemies_not_beaten)
 
     # # save the best solutions to files
-    # for i, solution in enumerate(best_solutions):
-    #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
+    for i, solution in enumerate(best_solutions):
+        np.savetxt(f'{experiment_name}/{solution_file_name}_beats_8_{uuid.uuid4()}', solution)
 
-    return [i.x for i in algorithm.ask()], best_not_beaten, best_x
+    return [i.x for i in algorithm.ask()], best_solutions_do_not_beat, best_solutions
 
 
 if __name__ == '__main__':
     time_start = time.time()
-
-    # --------------------------- The BEGINNING (3, 5, 7, 8)
-    # N_GENERATIONS = 30
-    # POP_SIZE = 90
-
-    # CLUSTER = [[5]]
-    # ENEMIES = np.array([3, 7])
-    # ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
 
     N_GENERATIONS = 1
     POP_SIZE = 100
@@ -174,8 +163,7 @@ if __name__ == '__main__':
     # Save population
     POP = copy.deepcopy(pop)
 
-    print("Training Round 6", end="\r")
-    N_GENERATIONS = 10
+    N_GENERATIONS = 15
     POP_SIZE = 20
 
     nhistory = 10  # For beaten2
@@ -184,14 +172,14 @@ if __name__ == '__main__':
     beaten2 = {1: nhistory * [0], 2: nhistory * [0], 3: nhistory * [0], 4: nhistory * [0], 5: nhistory * [0],
                6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]}
     best_performing = 0
-    BEST_x = ""
 
     iterations = 0
     while ENEMIES.size != 0:
-        # Select population
+        print(" ---- Iteration ", iterations, " ----")
+        # Randomly choose 20 individuals from the whole population and train them
         idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)
-        pop = [POP[idx] for idx in idx_pop]
-        POP = [POP[idx] for idx in range(len(POP)) if idx not in idx_pop]
+        pop = [POP[idx] for idx in idx_pop]  # population  to train
+        POP = [POP[idx] for idx in range(len(POP)) if idx not in idx_pop]  # rest of the population
 
         # Set enemies
         beaten_vals = np.array([beaten[enemy] for enemy in np.arange(1, 9)])
@@ -204,7 +192,6 @@ if __name__ == '__main__':
         opponents = np.random.choice(np.arange(1, 9), p=probs, size=3, replace=False)
         CLUSTER = [[opponents[0]]]
         ENEMIES = np.array([opponents[1], opponents[2]])
-        # CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
 
         try:
             ALL_ENEMIES = [enemy for cl in CLUSTER for enemy in cl] + list(ENEMIES)
@@ -215,6 +202,7 @@ if __name__ == '__main__':
         pop, best_not_beaten, best_x = main(env, n_genes, population=pop)
 
         # Update number of evaluations
+        # list of indexes of enemies that were beaten by FIRST best performing ind
         destroyed = [enemy for enemy in np.arange(1, 9) if enemy not in best_not_beaten[0]]
         if len(destroyed) > best_performing:
             best_performing = len(destroyed)
@@ -223,16 +211,15 @@ if __name__ == '__main__':
         for enemy in range(1, 9):
             if enemy in destroyed:
                 beaten[enemy] += 1
-                beaten2[enemy] = beaten2[enemy][1:] + [1]
+                beaten2[enemy] = beaten2[enemy][1:] + [1]  # remove oldest value and add 1
             else:
-                beaten2[enemy] = beaten2[enemy][1:] + [0]
+                beaten2[enemy] = beaten2[enemy][1:] + [0]  # remove oldest value and add 0
 
         print(f"\tEnemies beaten: {8 - len(best_not_beaten[0])}")
         print("\tBeaten:\n\t\t", beaten)
         print("\t STD of Beaten last iterations:\n\t\t", [np.std(beaten2[enemy]).round(2) for enemy in np.arange(1, 9)])
         print("\tDiversity: ", np.mean(pdist(pop, metric="euclidean")))
         print("\tCurrent Record: ", best_performing)
-        print("----")
 
         # Save population
         POP += copy.deepcopy(pop)
