@@ -127,7 +127,7 @@ def plot_pareto_fronts(res):
     plot.show()
 
 
-def main(env: Environment, n_genes: int, population=None):
+def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1):
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -136,10 +136,10 @@ def main(env: Environment, n_genes: int, population=None):
     )
     
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = 1, sigma = 1)) #, seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = pmut, sigma = vsigma)) #, seed=1
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = 1, sigma = 1)) # , seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = pmut, sigma = vsigma)) # , seed=1
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
@@ -193,11 +193,12 @@ if __name__ == '__main__':
     # ENEMIES = np.array([3, 7])
     # ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
 
-    N_GENERATIONS = 1
+    N_GENERATIONS = 10
     POP_SIZE = 100
+    pmut, vsigma = 1, 1
 
     CLUSTER = [[1]]
-    ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
+    ENEMIES = np.array([7])
     ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
     
 
@@ -206,7 +207,7 @@ if __name__ == '__main__':
     env.update_parameter('level', 2)
     env.update_parameter('randomini', "no")
 
-    pop, best_not_beaten, best_x = main(env, n_genes)
+    pop, best_not_beaten, best_x = main(env, n_genes, pmut = pmut, vsigma= vsigma)
     EVALUATIONS = N_GENERATIONS * POP_SIZE
 
     # print("Training Round 1")
@@ -310,7 +311,7 @@ if __name__ == '__main__':
     POP = copy.deepcopy(pop)
 
     print("Training Round 6", end="\r")
-    N_GENERATIONS = 10
+    N_GENERATIONS = 10#
     POP_SIZE = 20
     env.update_parameter('randomini', "no")
 
@@ -325,6 +326,14 @@ if __name__ == '__main__':
     iterations = 0
     while ENEMIES.size != 0:
         #env.update_parameter('randomini', "yes")
+        # Evaluate population --> beat rates
+        for x in POP:
+            for enemy in range(1, 9):
+                env.update_parameter('enemies', [enemy])
+                p, e, t = simulation(env, x, verbose=True)
+                if (e == 0) and (p > 0):
+                    beaten[enemy] += 1
+
         # Select population
         idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)
         pop = [POP[idx] for idx in idx_pop]
@@ -339,9 +348,15 @@ if __name__ == '__main__':
             probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.01, beaten_vals)
             probs = probs / sum(probs)
 
+        #if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
         opponents = np.random.choice(np.arange(1, 9), p = probs, size = 3, replace = False)
         CLUSTER = [[opponents[0]]]
         ENEMIES = np.array([opponents[1], opponents[2]])
+        # else:
+        #     opponents = np.random.choice(np.arange(1, 9), p = probs, size = 2, replace = False)
+        #     CLUSTER = [[opponents[0]]]
+        #     ENEMIES = np.array([opponents[1]])
+
         #CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
 
         # for cl in best_not_beaten:
@@ -361,7 +376,7 @@ if __name__ == '__main__':
             ALL_ENEMIES = [enemy for enemy in CLUSTER] + [ENEMIES]
         print(f"Cluster: {CLUSTER}")
         print(f"Enemies: {ENEMIES}")
-        pop, best_not_beaten, best_x = main(env, n_genes, population=pop)
+        pop, best_not_beaten, best_x = main(env, n_genes, population=pop, pmut = pmut, vsigma = vsigma)
 
         # Update number of evaluations
         destroyed = [enemy for enemy in np.arange(1, 9) if enemy not in best_not_beaten[0]]
@@ -371,7 +386,7 @@ if __name__ == '__main__':
             np.savetxt("BEST_SOLUTION", BEST_x)
         for enemy in range(1, 9):
             if enemy in destroyed:
-                beaten[enemy] += 1
+                #beaten[enemy] += 1
                 beaten2[enemy] = beaten2[enemy][1:] + [1]
             else:
                 beaten2[enemy] = beaten2[enemy][1:] + [0]
@@ -395,3 +410,4 @@ if __name__ == '__main__':
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
 
+# Initialized changed 1, 100, all
