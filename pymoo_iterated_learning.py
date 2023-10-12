@@ -312,7 +312,7 @@ if __name__ == '__main__':
     print("Training Round 6", end="\r")
     N_GENERATIONS = 10
     POP_SIZE = 20
-    env.update_parameter('randomini', "yes")
+    env.update_parameter('randomini', "no")
 
     nhistory = 10 # For beaten2
     beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 
