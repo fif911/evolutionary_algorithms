@@ -126,14 +126,17 @@ def main(env: Environment, n_genes: int, population=None):
         enemies=[1, 2, 3, 4, 5, 6, 7, 8],
         n_objectives=len(ENEMIES) + (len(CLUSTER))
     )
+    mutation_prob = 0.1
+    mutation_sigma = 1
+    crossover_prob = 0.6
 
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob=1),
-                            mutation=GaussianMutation(prob=1, sigma=1))  # , seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob=crossover_prob),
+                            mutation=GaussianMutation(prob=mutation_prob, sigma=mutation_sigma))  # , seed=1
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob=1),
-                            mutation=GaussianMutation(prob=1, sigma=1))  # , seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob=crossover_prob),
+                            mutation=GaussianMutation(prob=mutation_prob, sigma=mutation_sigma))  # , seed=1
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
