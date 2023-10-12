@@ -8,23 +8,19 @@ Algorithm: SMS-EMOA
 Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 Docs link: https://pymoo.org/algorithms/moo/sms.html
 """
-import copy
 import os
 import time
 
-from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
+import numpy as np
+from evoman.environment import Environment
 
+import pymoo.gradient.toolbox as anp
 from fitness_functions import individual_gain
 from nn_crossover import NNCrossover
-from matplotlib import pyplot as plt
-import numpy as np
-import pymoo.gradient.toolbox as anp
-from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
-from pymoo.util.running_metric import RunningMetricAnimation
+from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
 from pymoo.visualization.scatter import Scatter
-
 from sketches.diversity_measures import number_of_similar_solutions_per_individual
 from utils import simulation, verify_solution, init_env
 

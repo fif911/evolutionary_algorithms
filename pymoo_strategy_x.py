@@ -12,21 +12,19 @@ import copy
 import os
 import time
 
-from nn_crossover import NNCrossover
-from pymoo.operators.mutation.gauss import GaussianMutation
-from matplotlib import pyplot as plt
 import numpy as np
-import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
-from pymoo.algorithms.moo.sms import SMSEMOA
-from pymoo.core.problem import Problem
-from pymoo.util.running_metric import RunningMetricAnimation
-from pymoo.visualization.scatter import Scatter
 from scipy.spatial.distance import pdist
 
+import pymoo.gradient.toolbox as anp
+from nn_crossover import NNCrossover
+from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.core.problem import Problem
+from pymoo.operators.mutation.gauss import GaussianMutation
+from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env
 
-#np.random.seed(1)
+# np.random.seed(1)
 
 global ENEMIES
 global CLUSTER
@@ -91,10 +89,10 @@ class objectives(Problem):
         for icl, cl in enumerate(CLUSTER):
             objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
                                                           for ind_id in range(POP_SIZE)]
-        
+
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + icl + 2}"] = dict_enemies[enemy]
-        
+
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
@@ -128,12 +126,14 @@ def main(env: Environment, n_genes: int, population=None):
         enemies=[1, 2, 3, 4, 5, 6, 7, 8],
         n_objectives=len(ENEMIES) + (len(CLUSTER))
     )
-    
+
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = 1, sigma = 1)) #, seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob=1),
+                            mutation=GaussianMutation(prob=1, sigma=1))  # , seed=1
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob = 1), mutation = GaussianMutation(prob = 1, sigma = 1)) # , seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob=1),
+                            mutation=GaussianMutation(prob=1, sigma=1))  # , seed=1
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
@@ -193,7 +193,6 @@ if __name__ == '__main__':
     CLUSTER = [[1]]
     ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
     ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
-    
 
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
@@ -273,7 +272,7 @@ if __name__ == '__main__':
     # evaluations = POP_SIZE * N_GENERATIONS
     # print("\tLost to: ", best_not_beaten[0])
     # print("\tDiversity: ", np.mean(pdist(pop3, metric = "euclidean")))
-    
+
     # # ---------------------------------------------------------------------
     # # NUCLEAR EVENT --> Increase Diversity
     # # addpop = []
@@ -284,7 +283,7 @@ if __name__ == '__main__':
     # #     addpop.append(new)
     # # pop += addpop
     # pop = pop1 + pop2 + pop3
-    
+
     # # # Initialize 4
     # # N_GENERATIONS = 10
     # # POP_SIZE = 90
@@ -308,11 +307,11 @@ if __name__ == '__main__':
     POP_SIZE = 20
     env.update_parameter('randomini', "yes")
 
-    nhistory = 10 # For beaten2
-    beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 
+    nhistory = 10  # For beaten2
+    beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
               6: 0, 7: 0, 8: 0}
     beaten2 = {1: nhistory * [0], 2: nhistory * [0], 3: nhistory * [0], 4: nhistory * [0], 5: nhistory * [0],
-              6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]}
+               6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]}
     best_performing = 0
     BEST_x = ""
 
@@ -324,7 +323,7 @@ if __name__ == '__main__':
         POP = [POP[idx] for idx in range(len(POP)) if idx not in idx_pop]
 
         # Set enemies
-        #beaten_vals = np.array([sum(beaten[enemy]) for enemy in np.arange(1, 9)])
+        # beaten_vals = np.array([sum(beaten[enemy]) for enemy in np.arange(1, 9)])
         beaten_vals = np.array([beaten[enemy] for enemy in np.arange(1, 9)])
         if sum(beaten_vals) == 0:
             probs = np.ones(8) / 8
@@ -332,10 +331,10 @@ if __name__ == '__main__':
             probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.01, beaten_vals)
             probs = probs / sum(probs)
 
-        opponents = np.random.choice(np.arange(1, 9), p = probs, size = 3, replace = False)
+        opponents = np.random.choice(np.arange(1, 9), p=probs, size=3, replace=False)
         CLUSTER = [[opponents[0]]]
         ENEMIES = np.array([opponents[1], opponents[2]])
-        #CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
+        # CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
 
         # for cl in best_not_beaten:
         #     if cl not in CLUSTER:
@@ -369,22 +368,20 @@ if __name__ == '__main__':
             else:
                 beaten2[enemy] = beaten2[enemy][1:] + [0]
 
-
         print(f"\tEnemies beaten: {8 - len(best_not_beaten[0])}")
-        #print("\tBeaten:\n\t\t", np.array([sum(beaten[enemy]) for enemy in np.arange(1, 9)]))
+        # print("\tBeaten:\n\t\t", np.array([sum(beaten[enemy]) for enemy in np.arange(1, 9)]))
         print("\tBeaten:\n\t\t", beaten)
         print("\t STD of Beaten last iterations:\n\t\t", [np.std(beaten2[enemy]).round(2) for enemy in np.arange(1, 9)])
-        print("\tDiversity: ", np.mean(pdist(pop, metric = "euclidean")))
+        print("\tDiversity: ", np.mean(pdist(pop, metric="euclidean")))
         print("\tCurrent Record: ", best_performing)
         print("----")
 
         # Save population
         POP += copy.deepcopy(pop)
-        print("\tPopulation Diversity: ", np.mean(pdist(POP, metric = "euclidean")))
+        print("\tPopulation Diversity: ", np.mean(pdist(POP, metric="euclidean")))
         EVALUATIONS += N_GENERATIONS * POP_SIZE
         print("\tEvaluations: ", EVALUATIONS)
         iterations += 1
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
-
