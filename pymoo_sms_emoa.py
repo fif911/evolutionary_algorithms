@@ -13,25 +13,23 @@ Algorithm paper: https://sci-hub.se/10.1145/3321707.3321839
 Docs link: https://pymoo.org/algorithms/moo/age.html#nb-agemoea
 
 """
-import copy
 import time
 
-from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
 from evoman.environment import Environment
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
-from pymoo.operators.crossover.hux import HalfUniformCrossover
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
+from fitness_functions import original_fitness, individual_gain
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 0
-N_GENERATIONS_LEVEL_2 = 50
-POP_SIZE = 50
+N_GENERATIONS_LEVEL_1 = 20
+N_GENERATIONS_LEVEL_2 = 20
+POP_SIZE = 100
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -40,6 +38,7 @@ experiment_name = 'pymoo_sms_emoa'
 solution_file_name = 'pymoo_sms_emoa_best'
 
 initialise_script(experiment_name=experiment_name)
+np.set_printoptions(suppress=True)
 
 
 class objectives(Problem):
@@ -65,31 +64,28 @@ class objectives(Problem):
         #        another enemy)
         #        weighted average is another option, but then we have another problem of how to weight the enemies
         """
-
+        if POP_SIZE != len(x):
+            print(f"WARNING: POP_SIZE != len(x) in evaluation step (this happens sometimes do not see why)\n"
+                  f"pop size: {POP_SIZE}; len x:{len(x)}")
         # Initialize
         dict_enemies = {}
         # Get fitness for each enemy
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
-            
-            if enemy in [2, 5, 7, 8]:
-                #self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
-            else:
-                #self.env.update_parameter('level', 1)
-                self.env.update_parameter('randomini', "no")
+
             dict_enemies[enemy] = []
-            for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+            for individual_id in range(len(x)):
+                dict_enemies[enemy].append(
+                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
 
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
             "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-                                 range(POP_SIZE)],
+                                 range(len(x))],
             "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -124,7 +120,7 @@ def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     plot.show()
 
 
-def main(env: Environment, n_genes: int, population = None):
+def main(env: Environment, n_genes: int):
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -133,19 +129,25 @@ def main(env: Environment, n_genes: int, population = None):
     )
 
     if N_GENERATIONS_LEVEL_1:  # skip level 1 if it is 0
-        env.update_parameter("level", 1)
+        print("Setting the random initialisation position to Yes")
+        env.update_parameter("randomini", "yes")
         algorithm = SMSEMOA(pop_size=POP_SIZE, )
         algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_1), verbose=False)
 
         algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_1")
-        next_population = np.array([i.X for i in algorithm.pop])
+        # get the best individuals from results and population
+        # and pass further to the next level
+        _population = list(algorithm.result().X)
+        _population.extend(list(algorithm.pop.get("X")))
+        _population = _population[:POP_SIZE]
+        next_population = np.array(_population)
         first_algorithm_evaluations = algorithm.evaluator.n_eval
     else:
         next_population = FloatRandomSampling()
         first_algorithm_evaluations = 0
 
-    print("Setting the enemy level to 2")
-    env.update_parameter("level", 2)
+    print("Setting the random initialisation position to No")
+    env.update_parameter("randomini", 'no')
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
 
@@ -155,7 +157,8 @@ def main(env: Environment, n_genes: int, population = None):
     res = algorithm.result()
 
     res.F = 1 / res.F
-    print(res.F)
+    print("Final population fitness: ")
+    print(res.F, )
 
     max_enemies_beaten = 0
     best_solutions = []
@@ -187,10 +190,7 @@ if __name__ == '__main__':
     env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
 
-    env.update_parameter('level', 1)
     pop = main(env, n_genes)
-    # env.update_parameter('level', 2)
-    # pop = main(env, n_genes, population=pop)
 
     print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
     print("Done!")
