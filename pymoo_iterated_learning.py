@@ -76,7 +76,13 @@ class objectives(Problem):
 
             dict_enemies[enemy] = []
             for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                if self.env.randomini == "no":
+                    dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                else:
+                    sims = []
+                    for rep_rand in range(0, 5):
+                        sims.append(simulation(self.env, x[individual_id], inverted_fitness=True))
+                    dict_enemies[enemy].append(np.mean(sims))
 
         # Return fitness outputs for enemies
         # objectives_fitness = {
@@ -318,6 +324,7 @@ if __name__ == '__main__':
 
     iterations = 0
     while ENEMIES.size != 0:
+        #env.update_parameter('randomini', "yes")
         # Select population
         idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)
         pop = [POP[idx] for idx in idx_pop]
