@@ -28,7 +28,7 @@ from scipy.spatial.distance import pdist
 
 from utils import simulation, verify_solution, init_env
 
-#np.random.seed(1)
+# np.random.seed(1)
 
 global ENEMIES
 global CLUSTER
@@ -99,33 +99,35 @@ class objectives(Problem):
         for icl, cl in enumerate(CLUSTER):
             objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
                                                           for ind_id in range(len(x))]
-        
+
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + icl + 2}"] = dict_enemies[enemy]
-        
+
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, crossovermode = "NN"):
+def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, crossovermode="NN"):
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=[1, 2, 3, 4, 5, 6, 7, 8],
         n_objectives=len(ENEMIES) + (len(CLUSTER))
     )
-    
+
     if crossovermode == "NN":
-        crossover = NNCrossover(prob = 1)
+        crossover = NNCrossover(prob=1)
     elif crossovermode == "SBX":
-        crossover = SBX(prob = 1)
+        crossover = SBX(prob=1)
     else:
         raise ValueError("Crossover mode not recognized")
 
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover = crossover, mutation = GaussianMutation(prob = pmut, sigma = vsigma)) #, seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=crossover,
+                            mutation=GaussianMutation(prob=pmut, sigma=vsigma))  # , seed=1
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover = crossover, mutation = GaussianMutation(prob = pmut, sigma = vsigma)) # , seed=1
+        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=crossover,
+                            mutation=GaussianMutation(prob=pmut, sigma=vsigma))  # , seed=1
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
@@ -139,8 +141,6 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
-
-    #res.F = 1 / res.F
 
     # max_enemies_beaten = 0
     # best_solutions = []
@@ -161,22 +161,22 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
     #         best_not_beaten.append(enemies_not_beaten)
     #         best_x.append(x)
 
-
     # ---- Rank-based selection
     resulting_population = np.concatenate((res.X, [i.X for i in algorithm.ask()]))
     resulting_population = np.unique(resulting_population, axis=0)
     scores = []
     for x in resulting_population:
-        enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True, print_results=False)
+        enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
+                                                                          verbose=True, print_results=False)
         score = len(enemies_beaten)
         for i_enemy in range(len(ALL_ENEMIES)):
-            score += (100 - enemy_lives[i_enemy]) / (100 * len(ALL_ENEMIES)) # Also count evaluated enemies
+            score += (100 - enemy_lives[i_enemy]) / (100 * len(ALL_ENEMIES))  # Also count evaluated enemies
         scores.append(score)
-    
+
     # Sort
-    ranks = list(rankdata(scores, method = "dense"))
+    ranks = list(rankdata(scores, method="dense"))
     ranks /= sum(ranks)
-    idx_pop = np.random.choice(np.arange(0, resulting_population.shape[0]), size = POP_SIZE, p = ranks, replace = False)
+    idx_pop = np.random.choice(np.arange(0, resulting_population.shape[0]), size=POP_SIZE, p=ranks, replace=False)
     resulting_population = resulting_population[idx_pop, :]
     return list(resulting_population)
 
@@ -186,14 +186,14 @@ if __name__ == '__main__':
     # --------------------------- Initialize Population
     # ---- Initialize
     print("----------------------------------------------------------------------------------")
-    #print("Start Initialization")
+    # print("Start Initialization")
     # Environment
     env, n_genes = init_env(experiment_name, [1], n_hidden_neurons)
     env.update_parameter('multiplemode', 'no')
     env.update_parameter('level', 2)
     env.update_parameter('randomini', "no")
     # Parameters
-    pop = np.random.uniform(-1, 1, size = (100, 265))
+    pop = np.random.uniform(-1, 1, size=(100, 265))
     EVALUATIONS = 0
     ENEMIES = np.array([1])
     # N_GENERATIONS = 30
@@ -227,27 +227,28 @@ if __name__ == '__main__':
     popsize_or = copy.deepcopy(len(pop))
 
     # --------------------------- Iterated Learning/Constrained Led Approach
-    #print("Training Round 6", end="\r")
-    N_GENERATIONS = 10#
+    # print("Training Round 6", end="\r")
+    N_GENERATIONS = 10  #
     POP_SIZE = 20
     pmut, vsigma = 0.001, 1
     env.update_parameter('randomini', "no")
 
     max_n_enemies = 3
-    nhistory = 30 # For beaten2
-    assert  nhistory % 2 == 0, "nhistory must be even"
-    weights = 1 / ((np.arange(-(nhistory - 1) / 2, nhistory / 2, 1) ** 2) + 0.5) # Parabolic weights --> 0.5 displacement due to zero value
+    nhistory = 30  # For beaten2
+    assert nhistory % 2 == 0, "nhistory must be even"
+    weights = 1 / ((np.arange(-(nhistory - 1) / 2, nhistory / 2,
+                              1) ** 2) + 0.5)  # Parabolic weights --> 0.5 displacement due to zero value
 
-    beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 
+    beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
               6: 0, 7: 0, 8: 0}
     beaten2 = {1: nhistory * [0], 2: nhistory * [0], 3: nhistory * [0], 4: nhistory * [0], 5: nhistory * [0],
-              6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]}
+               6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]}
     best_performing = 0
     BEST_x = ""
 
     iterations = 0
     while ENEMIES.size != 0:
-        #env.update_parameter('randomini', "yes")
+        # env.update_parameter('randomini', "yes")
         # Evaluate population --> beat rates
         for enemy in range(1, 9):
             beaten[enemy] = 0
@@ -276,14 +277,13 @@ if __name__ == '__main__':
             np.savetxt("BEST_SOLUTION", BEST_x)
 
         # Update params
-        #min_percentage = min(list(beaten.values()))
-        #pmut = (1 / (max([0, min_percentage - 10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
-        #vsigma = (1 / (max([0, min_percentage -  10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
-        #if iterations < 10: # Switch to Neural Net Crossover from SBX
+        # min_percentage = min(list(beaten.values()))
+        # pmut = (1 / (max([0, min_percentage - 10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
+        # vsigma = (1 / (max([0, min_percentage -  10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
+        # if iterations < 10: # Switch to Neural Net Crossover from SBX
         #    crossovermode = "SBX"
-        #else:
+        # else:
         crossovermode = "NN"
-        
 
         print("NEW ITERATION: ", iterations)
         print("Mutation Probability: ", pmut)
@@ -293,28 +293,28 @@ if __name__ == '__main__':
         print("\tBeaten Percentages Current Population [%] and STD over " + str(nhistory) + " Runs [%]")
         for enemy in range(1, 9):
             print("\t\tEnemy: ", enemy)
-            print("\t\t\t" + str(np.round(beaten[enemy], 2)) +  "% - " + str(np.std(beaten2[enemy]).round(2)))
-        print("\tPopulation Diversity: ", np.mean(pdist(POP, metric = "euclidean")))
+            print("\t\t\t" + str(np.round(beaten[enemy], 2)) + "% - " + str(np.std(beaten2[enemy]).round(2)))
+        print("\tPopulation Diversity: ", np.mean(pdist(POP, metric="euclidean")))
 
         # Select population
-        idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)
-        pop = [POP[idx] for idx in idx_pop]
-        POP = [POP[idx] for idx in range(len(POP)) if idx not in idx_pop]
+        idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)  # choose 20 random individuals
+        pop = [POP[idx] for idx in idx_pop]  # select these individuals
+        POP = [POP[idx] for idx in range(len(POP)) if idx not in idx_pop]  # remove these individuals from the big POP
 
-        print("\tOld Diversity of Subsample: ", np.mean(pdist(pop, metric = "euclidean")))
+        print("\tDiversity of Subsample before SMS EMOA: ", np.mean(pdist(pop, metric="euclidean")))
 
         # Set enemies
-        beaten_vals = np.array([np.average(beaten2[enemy], weights = weights) for enemy in np.arange(1, 9)])
-        #beaten_vals = np.array([beaten[enemy] for enemy in np.arange(1, 9)])
+        beaten_vals = np.array([np.average(beaten2[enemy], weights=weights) for enemy in np.arange(1, 9)])
+        # beaten_vals = np.array([beaten[enemy] for enemy in np.arange(1, 9)])
         if sum(beaten_vals) == 0:
             probs = np.ones(8) / 8
         else:
             probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.01, beaten_vals)
             probs = probs / sum(probs)
 
-        #if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
+        # if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
         n_enemies = np.random.choice([2, 3])
-        opponents = np.random.choice(np.arange(1, 9), p = probs, size = n_enemies, replace = False)
+        opponents = np.random.choice(np.arange(1, 9), p=probs, size=n_enemies, replace=False)
         CLUSTER = [[opponents[0]]]
         ENEMIES = np.array([opponents[i] for i in range(1, n_enemies)])
         # else:
@@ -322,7 +322,7 @@ if __name__ == '__main__':
         #     CLUSTER = [[opponents[0]]]
         #     ENEMIES = np.array([opponents[1]])
 
-        #CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
+        # CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
 
         # for cl in best_not_beaten:
         #     if cl not in CLUSTER:
@@ -342,20 +342,12 @@ if __name__ == '__main__':
         print("\tTraining on: ")
         print(f"\t\tCluster: {CLUSTER}")
         print(f"\t\tEnemies: {ENEMIES}")
-        pop = main(env, n_genes, population=pop, pmut = pmut, vsigma = vsigma, crossovermode = crossovermode)
+        pop = main(env, n_genes, population=pop, pmut=pmut, vsigma=vsigma, crossovermode=crossovermode)
 
-        # # Update number of evaluations
-        # destroyed = [enemy for enemy in np.arange(1, 9) if enemy not in best_not_beaten[0]]
-        # if len(destroyed) > best_performing:
-        #     best_performing = len(destroyed)
-        #     BEST_x = best_x[0]
-        #     np.savetxt("BEST_SOLUTION", BEST_x)
-
-
-        print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric = "euclidean")))
+        print("\tDiversity of Subsample after SMS EMOA: ", np.mean(pdist(pop, metric="euclidean")))
         print("----")
         # Save population
-        POP += copy.deepcopy(pop)
+        POP += copy.deepcopy(pop)  # add new population to the whole populatin
         EVALUATIONS += N_GENERATIONS * POP_SIZE
         print("\tEvaluations: ", EVALUATIONS)
         print("----------------------------------------------------------------------------------")
