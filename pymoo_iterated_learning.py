@@ -167,13 +167,17 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, cros
     # ---- Rank-based selection
     resulting_population = np.concatenate((res.X, [i.X for i in algorithm.ask()]))
     resulting_population = np.unique(resulting_population, axis=0)
-    print("\tLen of unique solutions after SMS EMOA: ", len(resulting_population))
+    print("\tLen of unique solutions after SMS EMOA: ", len(resulting_population), " Choosing ", POP_SIZE, " solutions")
     scores = []
     for x in resulting_population:
         enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
                                                                           verbose=True, print_results=False)
+        # compose aggregate fitness value
         score = len(enemies_beaten)
         for i_enemy in range(len(ALL_ENEMIES)):
+            # For example if enemy live and all enemies to beat were 3
+            # enemy life: 80 --> (100 - 80) / 100 * 3 = 20/300 --> 0.6
+            # enemy life: 20 --> (100 - 20) / 100 * 3 = 80/300 --> 2.4
             score += (100 - enemy_lives[i_enemy]) / (100 * len(ALL_ENEMIES))  # Also count evaluated enemies
         scores.append(score)
 
@@ -250,7 +254,7 @@ if __name__ == '__main__':
     best_performing = 0
     BEST_x = ""
 
-    iterations = 0
+    iterations = 1
     while ENEMIES.size != 0:
         # env.update_parameter('randomini', "yes")
         # Evaluate population --> beat rates
