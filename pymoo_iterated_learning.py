@@ -28,6 +28,7 @@ from scipy.spatial.distance import pdist
 
 from utils import simulation, verify_solution, init_env
 from pymoo.config import Config
+
 Config.warnings['not_compiled'] = False
 
 # np.random.seed(1)
@@ -316,7 +317,7 @@ if __name__ == '__main__':
             probs = probs / sum(probs)
 
         # if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
-        n_enemies = np.random.choice([2, 3])
+        n_enemies = np.random.choice([2, max_n_enemies])
         opponents = np.random.choice(np.arange(1, 9), p=probs, size=n_enemies, replace=False)
         CLUSTER = [[opponents[0]]]
         ENEMIES = np.array([opponents[i] for i in range(1, n_enemies)])
