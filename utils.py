@@ -138,11 +138,20 @@ def tournament_selection(population, fitness, n_parents, k=5):
     :param k: Tournament size (default is 5)
     :return: 2D NumPy array of selected parents of shape (n_parents, n_genes)
     """
+    if len(population) == n_parents:
+        print("Warning: population size is equal to the number of parents to select. ")
+        return population
+    if len(population) < n_parents:
+        raise ValueError("Population size must be greater than the number of parents to select. "
+                         f"pop size: {len(population)}, n_parents: {n_parents}")
 
     selected_parents = []
 
     # Create a list of indices to track selected individuals
     selected_indices = []
+    print(f"Population shape: {population.shape}")
+    print(f"Fitness shape: {fitness.shape}")
+    print(f"Number of parents: {n_parents}")
 
     # Repeat the tournament process until n_parents parents are drawn
     while len(selected_parents) < n_parents:

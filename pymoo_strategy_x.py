@@ -92,7 +92,8 @@ class objectives(Problem):
 def main(env: Environment, n_genes: int, population=None,
          mutation_prob=1.0,
          mutation_sigma=1.0,
-         crossover_prob=1.0
+         crossover_prob=1.0,
+         crossover_class=NNCrossover
          ):
     # env.update_parameter('randomini', 'yes')
     problem = objectives(
@@ -103,11 +104,11 @@ def main(env: Environment, n_genes: int, population=None,
     )
 
     if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=NNCrossover(prob=crossover_prob),
+        algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=crossover_class(prob=crossover_prob),
                             mutation=GaussianMutation(prob=mutation_prob, sigma=mutation_sigma))  # , seed=1
     else:
         population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=NNCrossover(prob=crossover_prob),
+        algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=crossover_class(prob=crossover_prob),
                             mutation=GaussianMutation(prob=mutation_prob, sigma=mutation_sigma))  # , seed=1
     # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
     algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
@@ -149,6 +150,8 @@ def main(env: Environment, n_genes: int, population=None,
     # combine the best solutions with the rest of the population and select the best ones
     population_with_pareto_front_solutions, idx = \
         np.unique(np.concatenate((algorithm.result().X, algorithm.pop.get("X"))), axis=0, return_index=True)
+    print("UNIQUE Population with pareto front solutions: ", len(population_with_pareto_front_solutions))
+    print(algorithm.result().X == algorithm.pop.get("X"))
     population_with_pareto_front_fitness = np.concatenate((algorithm.result().F, algorithm.pop.get("F")))[idx]
     population_with_pareto_front_fitness = np.mean(population_with_pareto_front_fitness, axis=1)
     # resulting_population = unique(resulting_population, axis=0)[:POP_SIZE]
@@ -188,7 +191,7 @@ if __name__ == '__main__':
     # Save population
     POP = copy.deepcopy(pop)
 
-    N_GENERATIONS = 15
+    N_GENERATIONS = 5
     POP_SIZE = 20
 
     nhistory = 10  # For beaten2
@@ -227,9 +230,9 @@ if __name__ == '__main__':
         print(f"Enemies: {ENEMIES}")
         # the better we perform -> less mutation and crossover rate we need
         # mutation_prob ranges from 0.1 to 1
-        mutation_prob = 1 - (len(best_not_beaten[0]) / 8) * 0.95
-        mutation_sigma = 1 - (len(best_not_beaten[0]) / 8) * 0.95
-        crossover_prob = 1 - (len(best_not_beaten[0]) / 8) * 0.95
+        mutation_prob = 1 - ((8 - len(best_not_beaten[0])) / 8) * 0.95
+        mutation_sigma = 1 - ((8 - len(best_not_beaten[0])) / 8) * 0.95
+        crossover_prob = 1 - ((8 - len(best_not_beaten[0])) / 8) * 0.95
         print(f"Mutation prob: {mutation_prob}")
         print(f"Mutation sigma: {mutation_sigma}")
         print(f"Crossover prob: {crossover_prob}")
