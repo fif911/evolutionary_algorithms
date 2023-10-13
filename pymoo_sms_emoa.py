@@ -23,13 +23,14 @@ from pymoo.core.problem import Problem
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
 
-from fitness_functions import original_fitness, individual_gain
+from fitness_functions import original_fitness, individual_gain, just_fight_fitness
 from nn_crossover import NNCrossover
 from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, initialise_script
 
-N_GENERATIONS_LEVEL_1 = 20
-N_GENERATIONS_LEVEL_2 = 20
-POP_SIZE = 100
+N_GENERATIONS_LEVEL_1 = 0
+N_GENERATIONS_LEVEL_2 = 60
+N_EVALUATIONS = 30_000
+POP_SIZE = 40
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
 n_hidden_neurons = 10
@@ -76,7 +77,7 @@ class objectives(Problem):
             dict_enemies[enemy] = []
             for individual_id in range(len(x)):
                 dict_enemies[enemy].append(
-                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
+                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=just_fight_fitness))
 
         # Return fitness outputs for enemies
         objectives_fitness = {
@@ -149,7 +150,9 @@ def main(env: Environment, n_genes: int):
     print("Setting the random initialisation position to No")
     env.update_parameter("randomini", 'no')
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
-    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS_LEVEL_2), verbose=False)
+    algorithm.setup(problem, termination=(
+        'n_eval', N_EVALUATIONS,
+    ), verbose=False)
 
     algorithm = run_pymoo_algorithm(algorithm, problem, postfix="_level_2")
 

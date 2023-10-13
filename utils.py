@@ -95,12 +95,12 @@ def run_pymoo_algorithm(algorithm, problem, experiment_name="pymoo_sms_emoa", po
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
         # do same more things, printing, logging, storing or even modifying the algorithm object
-        print(f"Generation: {algorithm.n_gen}")
+        print(f"Generation: {algorithm.n_gen}. Evaluations: {algorithm.evaluator.n_eval}")
         print(f"Best individual fitness: {', '.join([f'{v:.3f} ({1 / v:.2f})' for v in algorithm.result().F[0]])}")
 
     # save the whole population to a file
-    np.savetxt(f'{experiment_name}/algorithm_gens_{algorithm.n_gen}_p-size_{len(algorithm.pop)}_{postfix}.txt',
-               algorithm.pop.get("X"))
+    # np.savetxt(f'{experiment_name}/algorithm_gens_{algorithm.n_gen}_p-size_{len(algorithm.pop)}_{postfix}.txt',
+    #            algorithm.pop.get("X"))
 
     return algorithm
 
@@ -126,6 +126,34 @@ def fitness_proportional_selection(population, fitness, n_parents, inverted_fitn
     selection_probabilities = fps
     parent_indices = np.random.choice(np.arange(0, population.shape[0]), n_parents, p=selection_probabilities)
     return population[parent_indices]
+
+
+def tournament_selection(population, fitness, n_parents, k=5):
+    """
+    Tournament selection
+
+    :param population: 2D NumPy array of shape (n_individuals, n_genes)
+    :param fitness: 1D NumPy array of shape (n_individuals,)
+    :param n_parents: Number of parents to select
+    :param k: Tournament size (default is 5)
+    :return: 2D NumPy array of selected parents of shape (n_parents, n_genes)
+    """
+
+    selected_parents = []
+
+    # Repeat the tournament process n_parents times
+    for _ in range(n_parents):
+        # Randomly select k individuals from the population
+        tournament_indices = np.random.choice(population.shape[0], k, replace=False)
+        tournament_candidates = population[tournament_indices]
+
+        # Find the index of the winner (individual with the highest fitness)
+        winner_index = np.argmax(fitness[tournament_indices])
+
+        # Add the winner to the selected parents
+        selected_parents.append(tournament_candidates[winner_index])
+
+    return np.array(selected_parents)
 
 
 def read_solutions_from_file(filepath, startswith=None):

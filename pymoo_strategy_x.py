@@ -15,6 +15,7 @@ import uuid
 
 import numpy as np
 from evoman.environment import Environment
+from numpy.lib.arraysetops import unique
 from scipy.spatial.distance import pdist
 
 import pymoo.gradient.toolbox as anp
@@ -22,8 +23,8 @@ from nn_crossover import NNCrossover
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.core.problem import Problem
 from pymoo.operators.mutation.gauss import GaussianMutation
-from pymoo.visualization.scatter import Scatter
-from utils import simulation, verify_solution, init_env
+from utils import simulation, verify_solution, init_env, read_solutions_from_file, fitness_proportional_selection, \
+    tournament_selection
 
 # np.random.seed(1)
 
@@ -32,11 +33,11 @@ global CLUSTER
 global ALL_ENEMIES
 global N_GENERATIONS
 global POP_SIZE
-
+global SEEN_8_BEATING_SOLUTIONS
 n_hidden_neurons = 10
 
-experiment_name = 'pymoo_sms_emoa'
-solution_file_name = 'pymoo_sms_emoa_best.txt'
+experiment_name = 'magic_8'
+solution_file_name = 'strategy_x.txt'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
@@ -80,7 +81,7 @@ class objectives(Problem):
         objectives_fitness = {}
         for icl, cl in enumerate(CLUSTER):
             objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
-                                                          for ind_id in range(POP_SIZE)]
+                                                          for ind_id in range(len(x))]
 
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + icl + 2}"] = dict_enemies[enemy]
@@ -89,10 +90,11 @@ class objectives(Problem):
 
 
 def main(env: Environment, n_genes: int, population=None,
-         mutation_prob=0.6,
-         mutation_sigma=0.2,
-         crossover_prob=0.6
+         mutation_prob=1.0,
+         mutation_sigma=1.0,
+         crossover_prob=1.0
          ):
+    # env.update_parameter('randomini', 'yes')
     problem = objectives(
         env=env,
         n_genes=n_genes,
@@ -114,7 +116,7 @@ def main(env: Environment, n_genes: int, population=None,
     while algorithm.has_next():
         print(np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
         pop = algorithm.ask()
-        algorithm.evaluator.eval(problem, pop)
+        algorithm.evaluator.eval(problem, pop, skip_already_evaluated=False)
         algorithm.tell(infills=pop)
         step += 1
 
@@ -137,13 +139,29 @@ def main(env: Environment, n_genes: int, population=None,
             best_solutions_do_not_beat.append(enemies_not_beaten)
 
     # # save the best solutions to files
-    for i, solution in enumerate(best_solutions):
-        np.savetxt(f'{experiment_name}/{solution_file_name}_beats_8_{uuid.uuid4()}', solution)
+    if max_enemies_beaten == 8:
+        for i, solution in enumerate(best_solutions):
+            if list(solution) not in SEEN_8_BEATING_SOLUTIONS:
+                SEEN_8_BEATING_SOLUTIONS.append(list(solution))
+                np.savetxt(f'{experiment_name}/beats_8_{uuid.uuid4()}_{solution_file_name}', solution)
+        print("Unique solutions beating 8 enemies: ", len(SEEN_8_BEATING_SOLUTIONS))
 
-    return [i.x for i in algorithm.ask()], best_solutions_do_not_beat, best_solutions
+    # combine the best solutions with the rest of the population and select the best ones
+    population_with_pareto_front_solutions, idx = \
+        np.unique(np.concatenate((algorithm.result().X, algorithm.pop.get("X"))), axis=0, return_index=True)
+    population_with_pareto_front_fitness = np.concatenate((algorithm.result().F, algorithm.pop.get("F")))[idx]
+    population_with_pareto_front_fitness = np.mean(population_with_pareto_front_fitness, axis=1)
+    # resulting_population = unique(resulting_population, axis=0)[:POP_SIZE]
+    survived_pop = tournament_selection(population_with_pareto_front_solutions,
+                                        population_with_pareto_front_fitness,
+                                        POP_SIZE, k=5)
+
+    return list(survived_pop), best_solutions_do_not_beat, best_solutions
 
 
 if __name__ == '__main__':
+    SMART_INIT = False
+    SEEN_8_BEATING_SOLUTIONS = []
     time_start = time.time()
 
     N_GENERATIONS = 1
@@ -157,9 +175,16 @@ if __name__ == '__main__':
     env.update_parameter('multiplemode', 'no')
     env.update_parameter('level', 2)
 
-    pop, best_not_beaten, best_x = main(env, n_genes)
-    EVALUATIONS = N_GENERATIONS * POP_SIZE
-
+    pop, best_not_beaten, best_x = [], [[]], []
+    if SMART_INIT:
+        EVALUATIONS = N_GENERATIONS * POP_SIZE
+        # load population from solutions beats 5 enemies
+        solutions_ = read_solutions_from_file("./farmed_beats_8")
+        # pop = np.concatenate((unique(solutions_, axis=0), pop))
+        pop = list(solutions_[:POP_SIZE])
+    else:
+        pop = np.random.uniform(-1, 1, (POP_SIZE, n_genes))
+        EVALUATIONS = 0
     # Save population
     POP = copy.deepcopy(pop)
 
@@ -176,6 +201,7 @@ if __name__ == '__main__':
     iterations = 0
     while ENEMIES.size != 0:
         print(" ---- Iteration ", iterations, " ----")
+        print("Population size: ", len(POP), " POP_SIZE: ", POP_SIZE)
         # Randomly choose 20 individuals from the whole population and train them
         idx_pop = np.random.choice(range(len(POP)), size=POP_SIZE, replace=False)
         pop = [POP[idx] for idx in idx_pop]  # population  to train
@@ -199,7 +225,17 @@ if __name__ == '__main__':
             ALL_ENEMIES = [enemy for enemy in CLUSTER] + [ENEMIES]
         print(f"Cluster: {CLUSTER}")
         print(f"Enemies: {ENEMIES}")
-        pop, best_not_beaten, best_x = main(env, n_genes, population=pop)
+        # the better we perform -> less mutation and crossover rate we need
+        # mutation_prob ranges from 0.1 to 1
+        mutation_prob = 1 - (len(best_not_beaten[0]) / 8) * 0.95
+        mutation_sigma = 1 - (len(best_not_beaten[0]) / 8) * 0.95
+        crossover_prob = 1 - (len(best_not_beaten[0]) / 8) * 0.95
+        print(f"Mutation prob: {mutation_prob}")
+        print(f"Mutation sigma: {mutation_sigma}")
+        print(f"Crossover prob: {crossover_prob}")
+
+        pop, best_not_beaten, best_x = main(env, n_genes, population=pop, mutation_prob=mutation_prob,
+                                            mutation_sigma=mutation_sigma, crossover_prob=crossover_prob)
 
         # Update number of evaluations
         # list of indexes of enemies that were beaten by FIRST best performing ind
