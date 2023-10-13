@@ -29,7 +29,7 @@ from utils import simulation, verify_solution, init_env, run_pymoo_algorithm, in
 
 N_GENERATIONS_LEVEL_1 = 0
 N_GENERATIONS_LEVEL_2 = 60
-N_EVALUATIONS = 30_000
+N_EVALUATIONS = 45_000
 POP_SIZE = 40
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
