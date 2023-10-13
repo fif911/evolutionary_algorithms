@@ -77,7 +77,7 @@ class objectives(Problem):
             self.env.update_parameter('enemies', [enemy])
 
             dict_enemies[enemy] = []
-            for individual_id in range(POP_SIZE):
+            for individual_id in range(len(x)):
                 if self.env.randomini == "no":
                     dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
                 else:
@@ -98,7 +98,7 @@ class objectives(Problem):
         objectives_fitness = {}
         for icl, cl in enumerate(CLUSTER):
             objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
-                                                          for ind_id in range(POP_SIZE)]
+                                                          for ind_id in range(len(x))]
         
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + icl + 2}"] = dict_enemies[enemy]
