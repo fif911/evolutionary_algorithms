@@ -106,29 +106,6 @@ class objectives(Problem):
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def plot_pareto_fronts(res):
-    """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
-    plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
-    plot.add(res.F, color="red")
-    plot.show()
-
-    # for 3 objectives plot each pair of pareto fronts
-    # Hard vs Medium
-    plot = Scatter(labels=["Hard enemies", "Medium Enemies"], title="Pareto Front")
-    plot.add(res.F[:, [0, 1]], color="red")
-    plot.show()
-
-    # Hard vs Easy
-    plot = Scatter(labels=["Hard enemies", "Easy Enemies"], title="Pareto Front")
-    plot.add(res.F[:, [0, 2]], color="red")
-    plot.show()
-
-    # Medium vs Easy
-    plot = Scatter(labels=["Medium enemies", "Easy Enemies"], title="Pareto Front")
-    plot.add(res.F[:, [1, 2]], color="red")
-    plot.show()
-
-
 def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, crossovermode = "NN"):
     problem = objectives(
         env=env,
