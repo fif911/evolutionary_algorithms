@@ -31,7 +31,7 @@ env = Environment(experiment_name=experiment_name,
                   logs="off",
                   visuals=True)
 
-sol = np.loadtxt('solutions_beats_5_enemies/beats_8_enemies_2.txt')
+sol = np.loadtxt('generalist_solution_verification_multi/submission_solution.txt')
 
 # tests saved demo solutions for each enemy
 won_all = True

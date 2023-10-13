@@ -34,7 +34,7 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
 
 
 def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]] = None, print_results=True,
-                    verbose=False):
+                    verbose=False, verbose_for_gain=False):
     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
 
     if enemies is None:
@@ -42,7 +42,7 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
     env.update_parameter("multiplemode", "no")
     env.update_parameter("randomini", "no")
 
-    enemies_beaten, enemies_not_beaten, enemy_lives = [], [], []
+    enemies_beaten, enemies_not_beaten, player_lifes, enemy_lives, times = [], [], [], [], []
 
     for enemy_idx in enemies:
         env.update_parameter('enemies', [enemy_idx])
@@ -57,8 +57,12 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
         else:
             enemies_not_beaten.append(enemy_idx)
         enemy_lives.append(e)
+        player_lifes.append(p)
+        times.append(t)
     if print_results:
         print(f"Enemies beaten: {enemies_beaten}; {len(enemies_beaten)}/{len(enemies)}")
+    if verbose_for_gain:
+        return enemies_beaten, player_lifes, times
     if verbose:
         return enemies_beaten, enemies_not_beaten, enemy_lives
     else:
@@ -110,3 +114,28 @@ def initialise_script(experiment_name):
         os.remove(os.path.join(experiment_name, file))
 
     os.environ["SDL_VIDEODRIVER"] = "dummy"
+
+
+def fitness_proportional_selection(population, fitness, n_parents, inverted_fitness=True):
+    """Fitness proportional selection (roulette wheel selection)"""
+    SMOOTHING_FACTOR = 10
+    if inverted_fitness:
+        fitness = 1 / fitness
+    fitness = fitness + SMOOTHING_FACTOR - np.min(fitness)
+    fps = fitness / np.sum(fitness)
+    selection_probabilities = fps
+    parent_indices = np.random.choice(np.arange(0, population.shape[0]), n_parents, p=selection_probabilities)
+    return population[parent_indices]
+
+
+def read_solutions_from_file(filepath, startswith=None):
+    solutions = []
+    for file in os.listdir(filepath):
+        with open(f'{filepath}/{file}') as f:
+            if startswith and file.startswith(startswith):
+                solutions.append(f.read().splitlines())
+            if not startswith:
+                solutions.append(f.read().splitlines())
+
+    solutions = np.array(solutions, dtype=float)
+    return solutions
