@@ -130,7 +130,7 @@ def fitness_proportional_selection(population, fitness, n_parents, inverted_fitn
 
 def tournament_selection(population, fitness, n_parents, k=5):
     """
-    Tournament selection
+    Tournament selection for a minimization problem
 
     :param population: 2D NumPy array of shape (n_individuals, n_genes)
     :param fitness: 1D NumPy array of shape (n_individuals,)
@@ -141,18 +141,31 @@ def tournament_selection(population, fitness, n_parents, k=5):
 
     selected_parents = []
 
-    # Repeat the tournament process n_parents times
-    for _ in range(n_parents):
-        # Randomly select k individuals from the population
-        tournament_indices = np.random.choice(population.shape[0], k, replace=False)
+    # Create a list of indices to track selected individuals
+    selected_indices = []
+
+    # Repeat the tournament process until n_parents parents are drawn
+    while len(selected_parents) < n_parents:
+        # Randomly select k unique individuals from the population
+        remaining_indices = list(set(range(population.shape[0])) - set(selected_indices))
+        if len(remaining_indices) < k:
+            # Not enough remaining individuals to form a complete tournament
+            # Draw from the entire population (allow duplicates)
+            tournament_indices = np.random.choice(population.shape[0], k, replace=True)
+            print("Warning: not enough remaining individuals to form a complete tournament")
+        else:
+            # There are enough remaining individuals for a complete tournament
+            individuals_to_draw = min(n_parents - len(selected_parents), k)
+            tournament_indices = np.random.choice(remaining_indices, individuals_to_draw, replace=False)
+
+        selected_indices.extend(tournament_indices)
         tournament_candidates = population[tournament_indices]
 
-        # Find the index of the winner (individual with the highest fitness)
-        winner_index = np.argmax(fitness[tournament_indices])
+        # Find the index of the winner (individual with the lowest fitness)
+        winner_index = np.argmin(fitness[tournament_indices])
 
         # Add the winner to the selected parents
         selected_parents.append(tournament_candidates[winner_index])
-
     return np.array(selected_parents)
 
 
