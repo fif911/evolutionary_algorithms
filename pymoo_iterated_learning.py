@@ -27,6 +27,8 @@ from pymoo.visualization.scatter import Scatter
 from scipy.spatial.distance import pdist
 
 from utils import simulation, verify_solution, init_env
+from pymoo.config import Config
+Config.warnings['not_compiled'] = False
 
 # np.random.seed(1)
 
@@ -164,6 +166,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, cros
     # ---- Rank-based selection
     resulting_population = np.concatenate((res.X, [i.X for i in algorithm.ask()]))
     resulting_population = np.unique(resulting_population, axis=0)
+    print("\tLen of unique solutions after SMS EMOA: ", len(resulting_population))
     scores = []
     for x in resulting_population:
         enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
@@ -345,7 +348,6 @@ if __name__ == '__main__':
         pop = main(env, n_genes, population=pop, pmut=pmut, vsigma=vsigma, crossovermode=crossovermode)
 
         print("\tDiversity of Subsample after SMS EMOA: ", np.mean(pdist(pop, metric="euclidean")))
-        print("----")
         # Save population
         POP += copy.deepcopy(pop)  # add new population to the whole populatin
         EVALUATIONS += N_GENERATIONS * POP_SIZE
