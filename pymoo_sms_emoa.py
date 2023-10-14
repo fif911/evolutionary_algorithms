@@ -28,7 +28,7 @@ from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env, initialise_script, print_progress_bar
 
 # N_GENERATIONS = 50
-N_EVALUATIONS = 1000  # 50_000
+N_EVALUATIONS = 50_000  # 50_000
 POP_SIZE = 100  # TODO: Double-check this
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -127,13 +127,9 @@ def main(env: Environment, n_genes: int, population=None):
 
     next_population = FloatRandomSampling()
 
-    print("Setting the enemy level to 2")
-    env.update_parameter("level", 2)
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
     algorithm.setup(problem, termination=('n_eval', N_EVALUATIONS))
 
-    # until the algorithm has no terminated
-    _gen_counter = 0
     while algorithm.has_next():
         # ask the algorithm for the next solution to be evaluated
         pop = algorithm.ask()
@@ -141,8 +137,8 @@ def main(env: Environment, n_genes: int, population=None):
         algorithm.evaluator.eval(problem, pop)
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
-        print_progress_bar(_gen_counter + 1, total=POP_SIZE, start_time=start_time)
-        _gen_counter += 1
+        print_progress_bar(algorithm.evaluator.n_eval, total=N_EVALUATIONS, start_time=start_time)
+
     print()
     # obtain the result objective from the algorithm
     res = algorithm.result()
