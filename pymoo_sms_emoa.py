@@ -88,7 +88,7 @@ class objectives(Problem):
                                range(len(x))],
         }
 
-        out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
+        out["F"] = np.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
 def plot_pareto_fronts(res, best_solutions_idx: list[int]):
