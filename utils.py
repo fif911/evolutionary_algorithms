@@ -54,7 +54,7 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
 
 
 def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]] = None, print_results=True,
-                    verbose=False):
+                    verbose=False, vv=False):
     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
 
     if enemies is None:
@@ -62,7 +62,7 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
     env.update_parameter("multiplemode", "no")
     env.update_parameter("randomini", "no")
 
-    enemies_beaten, enemies_not_beaten, enemy_lives = [], [], []
+    enemies_beaten, enemies_not_beaten, enemy_lives, player_lifes, times = [], [], [], [], []
 
     for enemy_idx in enemies:
         env.update_parameter('enemies', [enemy_idx])
@@ -77,10 +77,14 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
         else:
             enemies_not_beaten.append(enemy_idx)
         enemy_lives.append(e)
+        player_lifes.append(p)
+        times.append(t)
     if print_results:
         print(f"Enemies beaten: {enemies_beaten}; {len(enemies_beaten)}/{len(enemies)}")
     if verbose:
         return enemies_beaten, enemies_not_beaten, enemy_lives
+    elif vv:
+        return enemies_beaten, enemies_not_beaten, enemy_lives, player_lifes, times
     else:
         return len(enemies_beaten)
 
@@ -121,12 +125,13 @@ def run_pymoo_algorithm(algorithm, problem, experiment_name="pymoo_sms_emoa", po
     return algorithm
 
 
-def initialise_script(experiment_name):
+def initialise_script(experiment_name, clean_folder=True):
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
 
     # Clean the folder
-    for file in os.listdir(experiment_name):
-        os.remove(os.path.join(experiment_name, file))
+    if clean_folder:
+        for file in os.listdir(experiment_name):
+            os.remove(os.path.join(experiment_name, file))
 
     os.environ["SDL_VIDEODRIVER"] = "dummy"
