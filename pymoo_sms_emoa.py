@@ -130,7 +130,7 @@ def main(env: Environment, n_genes: int, population=None):
     print("Setting the enemy level to 2")
     env.update_parameter("level", 2)
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
-    algorithm.setup(problem, termination=('n_eval', N_EVALUATIONS), save_history=True)
+    algorithm.setup(problem, termination=('n_eval', N_EVALUATIONS))
 
     # until the algorithm has no terminated
     _gen_counter = 0
