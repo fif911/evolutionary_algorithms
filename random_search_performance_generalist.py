@@ -3,27 +3,11 @@ import uuid
 
 import pandas as pd
 
-from utils import initialise_script, init_env, verify_solution
+from utils import initialise_script, init_env, verify_solution, print_progress_bar
 
 experiment_name = 'random_search_performance_generalist'
 initialise_script(experiment_name, clean_folder=False)
 import numpy as np
-
-
-def print_progress_bar(iteration, total, start_time, bar_length=100):
-    progress = (iteration / total)
-    arrow = '=' * int(round(bar_length * progress))
-    spaces = ' ' * (bar_length - len(arrow))
-
-    elapsed_time = time.time() - start_time
-    elapsed_minutes = elapsed_time / 60.0
-    estimated_total_time = elapsed_time / progress if progress > 0 else 0
-    estimated_remaining_time = (estimated_total_time - elapsed_time) / 60.0
-
-    print(f'\r[{arrow}{spaces}] {np.round(progress * 100, 3)}% '
-          f'\t\tElapsed: {np.round(elapsed_minutes, 2)} min '
-          f'\t\tETA: {np.round(estimated_remaining_time, 2)} min', end='')
-
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 if __name__ == '__main__':
