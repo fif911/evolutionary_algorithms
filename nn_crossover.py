@@ -13,7 +13,7 @@ def mut_binomial(n, m, prob, at_least_once=True):
     #     M = row_at_least_once_true(M)
     # return M
     # Setting
-    option = "hidden in and out"#"hidden in, output in"
+    option = "hidden in, output in" # "hidden in and out"#"hidden in, output in"
 
     # Hidden neurons and inputs
     n_hidden = 10

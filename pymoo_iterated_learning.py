@@ -100,11 +100,11 @@ class objectives(Problem):
         # }
         objectives_fitness = {}
         for icl, cl in enumerate(CLUSTER):
-            objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
-                                                          for ind_id in range(len(x))]
+            objectives_fitness[f"objective_c_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
+                                                            for ind_id in range(len(x))]
 
         for ienemy, enemy in enumerate(ENEMIES):
-            objectives_fitness[f"objective_{ienemy + icl + 2}"] = dict_enemies[enemy]
+            objectives_fitness[f"objective_e_{ienemy + icl + 2}"] = dict_enemies[enemy]
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
@@ -167,11 +167,19 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, cros
     # ---- Rank-based selection
     resulting_population = np.concatenate((res.X, [i.X for i in algorithm.ask()]))
     resulting_population = np.unique(resulting_population, axis=0)
+    max_enemies_beaten = 0
+    best_solutions_failed_to_beat = []
     print("\tLen of unique solutions after SMS EMOA: ", len(resulting_population), " Choosing ", POP_SIZE, " solutions")
     scores = []
     for x in resulting_population:
         enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
                                                                           verbose=True, print_results=False)
+        if len(enemies_beaten) > max_enemies_beaten:
+            max_enemies_beaten = len(enemies_beaten)
+            best_solutions_failed_to_beat = [enemies_not_beaten]
+        elif len(enemies_beaten) == max_enemies_beaten:
+            best_solutions_failed_to_beat.append(enemies_not_beaten)
+
         # compose aggregate fitness value
         score = len(enemies_beaten)
         for i_enemy in range(len(ALL_ENEMIES)):
@@ -180,6 +188,17 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, cros
             # enemy life: 20 --> (100 - 20) / 100 * 3 = 80/300 --> 2.4
             score += (100 - enemy_lives[i_enemy]) / (100 * len(ALL_ENEMIES))  # Also count evaluated enemies
         scores.append(score)
+
+    # prints the number of times each enemy was not beaten by the best solutions
+    print("\tBest solutions failed to beat: ")
+    # Flatten the input array and count the occurrences of each element
+    flat_array = np.array(best_solutions_failed_to_beat).flatten()
+    unique_elements, counts = np.unique(flat_array, return_counts=True)
+
+    resulting_array = np.zeros(9, dtype=int)  # Initialize an array of zeros with a size of 9
+    resulting_array[unique_elements] = counts
+    for enemy in range(1, 9):
+        print("\t\t", "Enemy ", enemy, ":   ", resulting_array[enemy], " times")
 
     # Sort
     ranks = list(rankdata(scores, method="dense"))
@@ -201,7 +220,7 @@ if __name__ == '__main__':
     env.update_parameter('level', 2)
     env.update_parameter('randomini', "no")
     # Parameters
-    pop = np.random.uniform(-1, 1, size=(100, 265))
+    pop = np.random.uniform(-1, 1, size=(80, 265))
     EVALUATIONS = 0
     ENEMIES = np.array([1])
     # N_GENERATIONS = 30
@@ -235,14 +254,13 @@ if __name__ == '__main__':
     popsize_or = copy.deepcopy(len(pop))
 
     # --------------------------- Iterated Learning/Constrained Led Approach
-    # print("Training Round 6", end="\r")
-    N_GENERATIONS = 10  #
+    N_GENERATIONS = 20
     POP_SIZE = 20
-    pmut, vsigma = 0.001, 1
+
     env.update_parameter('randomini', "no")
 
     max_n_enemies = 3
-    nhistory = 30  # For beaten2
+    nhistory = 10  # For beaten2
     assert nhistory % 2 == 0, "nhistory must be even"
     weights = 1 / ((np.arange(-(nhistory - 1) / 2, nhistory / 2,
                               1) ** 2) + 0.5)  # Parabolic weights --> 0.5 displacement due to zero value
@@ -255,7 +273,7 @@ if __name__ == '__main__':
     BEST_x = ""
 
     iterations = 1
-    while ENEMIES.size != 0:
+    while True:
         # env.update_parameter('randomini', "yes")
         # Evaluate population --> beat rates
         for enemy in range(1, 9):
@@ -281,8 +299,9 @@ if __name__ == '__main__':
 
         if most_beaten > best_performing:
             best_performing = copy.deepcopy(most_beaten)
+        if most_beaten == 8:
             BEST_x = copy.deepcopy(best_x)
-            np.savetxt("BEST_SOLUTION", BEST_x)
+            np.savetxt("BEST_SOLUTION___.txt", BEST_x)
 
         # Update params
         # min_percentage = min(list(beaten.values()))
@@ -291,10 +310,24 @@ if __name__ == '__main__':
         # if iterations < 10: # Switch to Neural Net Crossover from SBX
         #    crossovermode = "SBX"
         # else:
+        # vary pmut and vsigma based on the number of enemies beaten
+
+        # if most_beaten >= 7:
+        #     crossovermode = "NN"
+        #     pmut = 1 - ((8 - most_beaten) / 8) * 0.95
+        #     vsigma = 1 - ((8 - most_beaten) / 8) * 0.95
+        # else:
+        #     crossovermode = "NN" if np.random.choice([1, 0], p=[0.7, 0.3]) == 1 else "SBX"
+        #     pmut, vsigma = np.random.uniform(high=1, low=0.6), np.random.uniform(high=1, low=0.6)
+        # pmut = 1 - ((8 - most_beaten) / 8) * 0.95
+        # vsigma = 1 - ((8 - most_beaten) / 8) * 0.95
         crossovermode = "NN"
+        pmut = 1
+        vsigma = 1
 
         print("NEW ITERATION: ", iterations)
         print("Mutation Probability: ", pmut)
+        print("Mutation Sigma: ", vsigma)
         print("Crossover Type: ", crossovermode)
         print(f"\tEnemies beaten: {most_beaten}")
         print("\tCurrent Record: ", best_performing)
@@ -320,31 +353,73 @@ if __name__ == '__main__':
             probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.01, beaten_vals)
             probs = probs / sum(probs)
 
-        # if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
-        n_enemies = np.random.choice([2, max_n_enemies])
-        opponents = np.random.choice(np.arange(1, 9), p=probs, size=n_enemies, replace=False)
-        CLUSTER = [[opponents[0]]]
-        ENEMIES = np.array([opponents[i] for i in range(1, n_enemies)])
+        if most_beaten <= 3:
+            CLUSTER = [[1, 2] if np.random.uniform(0, 1) >= 0.5 else [6, 8]]
+            ENEMIES = [6]
+            print("Max enemies beaten is up 3")
+        elif most_beaten == 5 or most_beaten == 4:
+            CLUSTER = [[2, 3] if np.random.choice([0, 1], p=[0.5, 0.5]) == 1 else [7, 8]]
+            # 6 or 3
+            ENEMIES = [6] if np.random.choice([0, 1], p=[0.6, 0.4]) == 1 else [1]
+            print("Max enemies beaten up to 5")
+        elif most_beaten == 6:
+            opponents_1 = [beaten_vals.argmin() + 1]
+            CLUSTER = [opponents_1]
+            ENEMIES = np.array(opponents_1)
+            print("Max enemies beaten is 6")
+        else:
+            print("Max enemies beaten is more then 6")
+            # we beat 6. Train on ones we perform the worst
+            # choose the one with lowest beaten percentage
+            opponents_1 = [beaten_vals.argmin() + 1]
+            _beaten_vals = copy.deepcopy(beaten_vals)
+            _beaten_vals[_beaten_vals.argmin()] = 120  # set the lowest to 100 so that it is not chosen again
+            opponents_2 = [_beaten_vals.argmin() + 1]
+            del _beaten_vals
+
+            # Choose cluster. Exclude the best performing enemy and choose 3 enemies from the rest
+            inverted_probs = (1 / probs) / np.sum(1 / probs)
+            inverted_probs[inverted_probs.argmax()] = 0
+            inverted_probs = inverted_probs / np.sum(inverted_probs)  # renormalize
+            cluster_1 = np.random.choice(np.arange(1, 9), p=inverted_probs, size=3,
+                                         replace=False)
+
+            CLUSTER = [list(cluster_1), list(opponents_2)]
+            ENEMIES = np.array(opponents_1)
+        # # if np.random.choice([0, 1], p = [0.5, 0.5]) == 1:
+        # print(beaten)
+        # print(beaten_vals)
+        # n_enemies = np.random.choice([1, max_n_enemies])
+        # opponents_1 = np.random.choice(np.arange(1, 9), p=probs, size=n_enemies, replace=False)
+        #
+        # # put into the cluster at most most_beaten enemies that the whole population is good at
+        # # set 0 prob for the best performing enemy
+        # inverted_probs = (1 / probs) / np.sum(1 / probs)
+        # inverted_probs[inverted_probs.argmax()] = 0
+        # inverted_probs = inverted_probs / np.sum(inverted_probs)  # renormalize
+        # cluster_1 = np.random.choice(np.arange(1, 9), p=inverted_probs, size=np.random.randint(3, 6),
+        #                              replace=False)
+        # # indexes_of_not_selected_enemies = [i for i in np.arange(1, 9) if i not in cluster_1]  # to adjust for probs
+        # # sub_probs_without_selected_in_cluster_1 = np.insert(copy.copy(probs), 0, 0)[indexes_of_not_selected_enemies]
+        # # inverted_probs = (1 / sub_probs_without_selected_in_cluster_1) / np.sum(
+        # #     1 / sub_probs_without_selected_in_cluster_1)
+        # # cluster_2 = np.random.choice(indexes_of_not_selected_enemies, p=inverted_probs,
+        # #                              size=np.random.randint(1, 3), replace=False)
+        #
+        # indexes_of_not_selected_enemies = [i for i in np.arange(1, 9) if i not in opponents_1]  # to adjust for probs
+        # sub_probs_without_selected_in_opponents_1 = np.insert(copy.copy(probs), 0, 0)[indexes_of_not_selected_enemies]
+        # _probs = sub_probs_without_selected_in_opponents_1 / np.sum(sub_probs_without_selected_in_opponents_1)
+        # if n_enemies_in_opp_2 := np.random.randint(0, n_enemies):
+        #     opponents_2 = np.random.choice(indexes_of_not_selected_enemies, p=_probs,
+        #                                    size=n_enemies_in_opp_2, replace=False)
+        #     CLUSTER = [list(cluster_1), list(opponents_2)]
         # else:
-        #     opponents = np.random.choice(np.arange(1, 9), p = probs, size = 2, replace = False)
-        #     CLUSTER = [[opponents[0]]]
-        #     ENEMIES = np.array([opponents[1]])
+        #     CLUSTER = [list(cluster_1)]
+        #
+        # ENEMIES = np.array([opponents_1[i] for i in range(0, n_enemies)])
 
-        # CLUSTER = [[enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]]
-
-        # for cl in best_not_beaten:
-        #     if cl not in CLUSTER:
-        #         CLUSTER.append(cl)
-        # for icl, cl in enumerate(CLUSTER):
-        #     CLUSTER[icl] = [enemy for enemy in range(1, 9) if enemy not in cl]
-
-        # if not CLUSTER:
-        #     CLUSTER = [np.random.choice(best_not_beaten[0])]
-        # print(f"Cluster: {CLUSTER}")
-        # ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER[0]]
-        # ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
         try:
-            ALL_ENEMIES = [enemy for cl in CLUSTER for enemy in cl] + list(ENEMIES)
+            ALL_ENEMIES = list(np.unique([enemy for cl in CLUSTER for enemy in cl] + list(ENEMIES), axis=0))
         except TypeError:
             ALL_ENEMIES = [enemy for enemy in CLUSTER] + [ENEMIES]
         print("\tTraining on: ")
@@ -357,6 +432,7 @@ if __name__ == '__main__':
         POP += copy.deepcopy(pop)  # add new population to the whole populatin
         EVALUATIONS += N_GENERATIONS * POP_SIZE
         print("\tEvaluations: ", EVALUATIONS)
+        print(f"Time spent (minutes): {(time.time() - time_start) / 60:.2f}")
         print("----------------------------------------------------------------------------------")
         # Increase iterations
         iterations += 1
