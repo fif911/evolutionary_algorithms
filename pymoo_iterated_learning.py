@@ -178,7 +178,7 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
     # best_not_beaten = []
     best_x, max_enemies_beaten, best_enemies = [], 0, np.zeros(8)
     # env.update_parameter('level', 2)
-    # env.update_parameter('randomini', "no")
+    env.update_parameter('randomini', "no")
     for i, x in enumerate(res.X):
         enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
                                                     print_results=False)
@@ -236,7 +236,15 @@ if __name__ == '__main__':
         env.update_parameter('level', 2)
         env.update_parameter('randomini', "no")
         # Parameters
-        pop = np.random.uniform(-1, 1, size = (100, 265))
+        directory = "C:\\Users\\niels\\OneDrive\\Documenten\\GitHub\\Results\\farmed_beats_8"
+        for i, filename in enumerate(os.listdir(directory)):
+            f = os.path.join(directory, filename)
+            if i == 0:
+                pop = np.loadtxt(f).reshape(1, 265)
+            else:
+                pop = np.concatenate([pop, np.loadtxt(f).reshape(1, 265)], axis = 0)
+        #pop = pop[np.random.choice(np.arange(0, pop.shape[0]), size = 10, replace = False), :] # Select 100 random solutions
+        #pop = np.random.uniform(-1, 1, size = (100, 265))
         EVALUATIONS = 0
         ENEMIES = np.array([1])
         # N_GENERATIONS = 30
@@ -272,9 +280,9 @@ if __name__ == '__main__':
         # --------------------------- Iterated Learning/Constrained Led Approach
         #print("Training Round 6", end="\r")
         N_GENERATIONS = 10#
-        POP_SIZE = 20
-        pmut, vsigma, pcross = 1, 1, 1
-        crossovermode = "NN"
+        POP_SIZE = 5
+        pmut, vsigma, pcross = 1, 0.001, 0.0000001
+        crossovermode = "SBX"
         env.update_parameter('randomini', "no")
 
         min_n_enemies = 3
@@ -292,7 +300,7 @@ if __name__ == '__main__':
         BEST_x = ""
 
         iterations = 0
-        FITNESS = np.zeros((800, 301))
+        FITNESS = np.zeros((int(8 * popsize_or), 301))
         while EVALUATIONS < 50000:
             #env.update_parameter('randomini', "yes")
             # Evaluate population --> beat rates
@@ -308,7 +316,7 @@ if __name__ == '__main__':
                     p, e, t = simulation(env, x, verbose=True)
                     f = (100 - e) + np.log(p + 0.001)
                     # Store fitness
-                    FITNESS[int(i_x + (enemy - 1) * 100), iterations] = f
+                    FITNESS[int(i_x + (enemy - 1) * popsize_or), iterations] = f
 
                     # Update beaten
                     if (e == 0) and (p > 0):
