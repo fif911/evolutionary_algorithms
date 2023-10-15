@@ -157,6 +157,7 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
             # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
             algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
+    step = 0
     while algorithm.has_next():
         print("\t\t", np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
         if (step == 1) and (algorithm is None):
@@ -165,6 +166,7 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
             pop = algorithm.ask()
         algorithm.evaluator.eval(problem, pop)
         algorithm.tell(infills=pop)
+        step += 1
 
     # obtain the result objective from the algorithm
     res = algorithm.result()
