@@ -332,12 +332,12 @@ if __name__ == '__main__':
             
             if most_beaten >= best_performing:
                 if most_beaten == best_performing:
-                    BEST_x = np.loadtxt("BEST_SOLUTION" + str(trial))
+                    BEST_x = np.loadtxt("BEST_SOLUTION.txt" + str(trial))
                     BEST_x = np.concatenate([BEST_x, best_x], axis = 0)
                 else:
                     BEST_x = copy.deepcopy(best_x)
                 best_performing = copy.deepcopy(most_beaten)
-                np.savetxt("BEST_SOLUTION" + str(trial), BEST_x)
+                np.savetxt("BEST_SOLUTION.txt" + str(trial), BEST_x)
 
             # Update params
             #min_percentage = min(list(beaten.values()))
