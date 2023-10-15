@@ -3,7 +3,7 @@ import uuid
 
 import pandas as pd
 
-from utils import initialise_script, init_env, verify_solution, print_progress_bar
+from utils import initialise_script, init_env, verify_solution, print_progress_bar, calculate_ind_score
 
 experiment_name = 'random_search_performance_generalist'
 initialise_script(experiment_name, clean_folder=False)
@@ -27,12 +27,7 @@ if __name__ == '__main__':
                                                                                                vv=True,
                                                                                                print_results=False)
         # compose aggregate fitness value
-        score = len(enemies_beaten)
-        for i_enemy in range(len(ENEMIES)):
-            # For example if enemy live and all enemies to beat were 3
-            # enemy life: 80 --> (100 - 80) / 100 * 3 = 20/300 --> 0.6
-            # enemy life: 20 --> (100 - 20) / 100 * 3 = 80/300 --> 2.4
-            score += (100 - enemy_lives[i_enemy]) / (100 * len(ENEMIES))  # Also count evaluated enemies
+        score = calculate_ind_score(enemies_beaten=enemies_beaten, enemy_lives=enemy_lives, enemies=ENEMIES)
         scores.append(
             (score, len(enemies_beaten), enemies_beaten, enemies_not_beaten, enemy_lives, player_lives, times)
         )

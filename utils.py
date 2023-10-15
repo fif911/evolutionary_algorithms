@@ -151,3 +151,15 @@ def print_progress_bar(iteration, total, start_time, bar_length=100):
     print(f'\r[{arrow}{spaces}] {np.round(progress * 100, 3)}% '
           f'\t\tElapsed: {np.round(elapsed_minutes, 2)} min '
           f'\t\tETA: {np.round(estimated_remaining_time, 2)} min', end='')
+
+
+def calculate_ind_score(enemies_beaten, enemy_lives, enemies: Optional[list[int]] = None):
+    # compose aggregate fitness value
+    if not enemies:
+        enemies = [1, 2, 3, 4, 5, 6, 7, 8]
+    score = len(enemies_beaten)
+    for i_enemy in range(len(enemies)):
+        # For example if enemy live and all enemies to beat were 3
+        # enemy life: 80 --> (100 - 80) / 100 * 3 = 20/300 --> 0.6
+        # enemy life: 20 --> (100 - 20) / 100 * 3 = 80/300 --> 2.4
+        score += (100 - enemy_lives[i_enemy]) / (100 * len(enemies))  # Also count evaluated enemies
