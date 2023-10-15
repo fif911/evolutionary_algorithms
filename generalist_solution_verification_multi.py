@@ -29,19 +29,21 @@ win_id = None
 all_8_beating = True
 for id, sol in enumerate(solutions):
     print(f"Solution {id}/{len(solutions)}")
-    enemies_beaten, player_lifes, times = verify_solution(env, sol, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
-                                                          print_results=False,
-                                                          verbose_for_gain=True)
+    enemies_beaten, enemies_not_beaten, enemy_lives, player_lives, times = verify_solution(env, sol,
+                                                                                           enemies=[1, 2, 3, 4, 5, 6, 7,
+                                                                                                    8],
+                                                                                           print_results=False,
+                                                                                           vv=True)
     if len(enemies_beaten) != 8:
         all_8_beating = False
-    p_health = sum(player_lifes)
+    p_health = sum(player_lives)
     if p_health > max_health:
         max_health = p_health
         its_time = sum(times)
         win_id = id
 
     print(f"Won all: {len(enemies_beaten) == 8}")
-    print(f"Sum of remaining player life: {sum(player_lifes):.2f}/800 (to be maximised)")
+    print(f"Sum of remaining player life: {sum(player_lives):.2f}/800 (to be maximised)")
     print(f"Time took total: {sum(times)} (to be minimised)")
 
 print("---")

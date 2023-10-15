@@ -35,7 +35,7 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
 
 
 def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]] = None, print_results=True,
-                    verbose=False, verbose_for_gain=False):
+                    verbose=False, vv=False):
     """Verify the solution on the given enemies. If enemies is None, then verify on all enemies"""
 
     if enemies is None:
@@ -62,8 +62,8 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
         times.append(t)
     if print_results:
         print(f"Enemies beaten: {enemies_beaten}; {len(enemies_beaten)}/{len(enemies)}")
-    if verbose_for_gain:
-        return enemies_beaten, player_lifes, times
+    if vv:
+        return enemies_beaten, enemies_not_beaten, enemy_lives, player_lives, times
     if verbose:
         return enemies_beaten, enemies_not_beaten, enemy_lives
     else:
