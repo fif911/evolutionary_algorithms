@@ -63,8 +63,8 @@ def verify_solution(env: Environment, best_solution, enemies: Optional[list[int]
     if print_results:
         print(f"Enemies beaten: {enemies_beaten}; {len(enemies_beaten)}/{len(enemies)}")
     if vv:
-        return enemies_beaten, enemies_not_beaten, enemy_lives, player_lives, times
-    if verbose:
+        return enemies_beaten, enemies_not_beaten, enemy_lives, player_lifes, times
+    elif verbose:
         return enemies_beaten, enemies_not_beaten, enemy_lives
     else:
         return len(enemies_beaten)

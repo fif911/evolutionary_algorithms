@@ -20,17 +20,28 @@ import numpy as np
 from evoman.environment import Environment
 
 import pymoo.gradient.toolbox as anp
+from fitness_functions import destroy_and_save_player_life
 from nn_crossover import NNCrossover
 from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.config import Config
 from pymoo.core.problem import Problem
-from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.visualization.scatter import Scatter
-from utils import simulation, verify_solution, init_env, initialise_script, print_progress_bar
+from utils import simulation, verify_solution, init_env, initialise_script, print_progress_bar, read_solutions_from_file
 
-# N_GENERATIONS = 50
-N_EVALUATIONS = 50_000  # 50_000
-POP_SIZE = 100  # TODO: Double-check this
+Config.warnings['not_compiled'] = False
+
+next_population = read_solutions_from_file("farmed_beats_8", startswith="beats_8")
+POP_SIZE = len(next_population)  # POP_SIZE = 100  # TODO: Double-check this
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+
+# TERMINATION CRIETERIA
+term_critea = "n_gen"  # "n_gen" or "n_eval"
+if term_critea == "n_gen":
+    N_GENERATIONS = 30
+elif term_critea == "n_eval":
+    N_EVALUATIONS = 100_000
+else:
+    raise Exception("Invalid termination criteria")
 
 n_hidden_neurons = 10
 
@@ -71,17 +82,18 @@ class objectives(Problem):
             self.env.update_parameter('enemies', [enemy])
 
             dict_enemies[enemy] = []
-            for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
+            for individual_id in range(len(x)):
+                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True,
+                                                      fitness_function=destroy_and_save_player_life))
 
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
             "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
-                                 range(POP_SIZE)],
+                                 range(len(x))],
             "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
-                               range(POP_SIZE)],
+                               range(len(x))],
         }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
@@ -125,19 +137,26 @@ def main(env: Environment, n_genes: int, population=None):
         n_objectives=3
     )
 
-    next_population = FloatRandomSampling()
+    print("Starting algorithm...; Population size: ", POP_SIZE)
 
     algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=next_population, crossover=NNCrossover())
-    algorithm.setup(problem, termination=('n_eval', N_EVALUATIONS))
+    if term_critea == "n_eval":
+        algorithm.setup(problem, termination=('n_eval', N_EVALUATIONS), verbose=False)
+    elif term_critea == "n_gen":
+        algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
     while algorithm.has_next():
+
         # ask the algorithm for the next solution to be evaluated
         pop = algorithm.ask()
         # evaluate the individuals using the algorithm's evaluator (necessary to count evaluations for termination)
         algorithm.evaluator.eval(problem, pop)
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
-        print_progress_bar(algorithm.evaluator.n_eval, total=N_EVALUATIONS, start_time=start_time)
+        if term_critea == "n_eval":
+            print_progress_bar(algorithm.evaluator.n_eval, total=N_EVALUATIONS, start_time=start_time)
+        elif term_critea == "n_gen":
+            print_progress_bar(algorithm.n_gen, total=N_GENERATIONS, start_time=start_time)
 
     print()
     # obtain the result objective from the algorithm
