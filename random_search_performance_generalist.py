@@ -23,8 +23,7 @@ if __name__ == '__main__':
     scores = []
     for idx, x in enumerate(random_solutions):
         enemies_beaten, enemies_not_beaten, enemy_lives, player_lives, times = verify_solution(env, x,
-                                                                                               enemies=[1, 2, 3, 4, 5,
-                                                                                                        6, 7, 8],
+                                                                                               enemies=ENEMIES,
                                                                                                vv=True,
                                                                                                print_results=False)
         # compose aggregate fitness value
