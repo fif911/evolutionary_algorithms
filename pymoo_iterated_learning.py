@@ -16,12 +16,9 @@ from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
 
 from fitness_functions import individual_gain
 from nn_crossover import NNCrossover
-<<<<<<< Updated upstream
-=======
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.gauss import GaussianMutation
 from pymoo.core.population import Population
->>>>>>> Stashed changes
 from matplotlib import pyplot as plt
 import numpy as np
 import pymoo.gradient.toolbox as anp
@@ -83,18 +80,6 @@ class objectives(Problem):
             self.env.update_parameter('enemies', [enemy])
 
             dict_enemies[enemy] = []
-<<<<<<< Updated upstream
-            for individual_id in range(POP_SIZE):
-                dict_enemies[enemy].append(
-                    simulation(self.env, x[individual_id], inverted_fitness=True, fitness_function=individual_gain))
-
-        objectives_fitness = {
-            "objective_to_keep_current_progress": [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in CLUSTER]) for
-                                                   ind_id in
-                                                   range(POP_SIZE)]
-        }
-
-=======
             for individual_id in range(len(x)):
                 if self.env.randomini == "no":
                     dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
@@ -118,7 +103,6 @@ class objectives(Problem):
             objectives_fitness[f"objective_{icl + 1}"] = [np.max([dict_enemies[enemy_id][ind_id] for enemy_id in cl])
                                                           for ind_id in range(len(x))]
         
->>>>>>> Stashed changes
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + 2}"] = dict_enemies[enemy]
 
@@ -148,28 +132,13 @@ def plot_pareto_fronts(res):
     plot.show()
 
 
-<<<<<<< Updated upstream
-def main(env: Environment, n_genes: int, population=None, crossover=SimulatedBinaryCrossover()):
-    print("Number of objectives: ", len(ENEMIES) + (len(CLUSTER) > 0))
-=======
 def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, pcross = 1, crossovermode = "NN", algorithm = None):
->>>>>>> Stashed changes
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=[1, 2, 3, 4, 5, 6, 7, 8],
         n_objectives=len(ENEMIES) + (len(CLUSTER) > 0)
     )
-<<<<<<< Updated upstream
-
-    if population is None:
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, crossover=crossover)
-    else:
-        population = np.array(population)
-        algorithm = SMSEMOA(pop_size=POP_SIZE, seed=1, sampling=population, crossover=crossover)
-    # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
-    algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
-=======
     
     if crossovermode == "NN":
         crossover = NNCrossover(prob = pcross)
@@ -186,18 +155,13 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
             algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover = crossover, mutation = GaussianMutation(prob = pmut, sigma = vsigma)) # , seed=1
             # prepare the algorithm to solve the specific problem (same arguments as for the minimize function)
             algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
->>>>>>> Stashed changes
 
     while algorithm.has_next():
-<<<<<<< Updated upstream
-        pop = algorithm.ask()
-=======
         print("\t\t", np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
         if (step == 1) and (algorithm is None):
             pop = Population(population)
         else:
             pop = algorithm.ask()
->>>>>>> Stashed changes
         algorithm.evaluator.eval(problem, pop)
         algorithm.tell(infills=pop)
 
@@ -206,23 +170,6 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
 
     res.F = 1 / res.F
 
-<<<<<<< Updated upstream
-    max_enemies_beaten = 0
-    best_solutions = []
-    best_not_beaten = []
-    env.update_parameter('level', 2)
-    for i, x in enumerate(res.X):
-        enemies_beaten, enemies_not_beaten, _ = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
-                                                                print_results=False)
-        if len(enemies_beaten) > max_enemies_beaten:
-            max_enemies_beaten = len(enemies_beaten)
-            best_solutions = [x]  # reset the list because we found a better performing solution
-            best_not_beaten = [enemies_not_beaten]
-        elif len(enemies_beaten) == max_enemies_beaten:
-            best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
-            # TODO: here we may check what is the distribution of the population. Maybe others perform better on other enemies
-            best_not_beaten.append(enemies_not_beaten)
-=======
     # max_enemies_beaten = 0
     # best_solutions = []
     # best_not_beaten = []
@@ -242,78 +189,11 @@ def main(env: Environment, n_genes: int, population=None, pmut = 1, vsigma = 1, 
             best_enemies += np.where(enemy_lives == 0, 1, 0)
         
     best_enemies = best_enemies / len(best_x)
->>>>>>> Stashed changes
 
     # # save the best solutions to files
     # for i, solution in enumerate(best_solutions):
     #     np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
 
-<<<<<<< Updated upstream
-    sim_solution_per_ind = number_of_similar_solutions_per_individual(res.X, prints=True)
-    # TODO: add fitness sharing and fitness proportional parent selection
-    return [i.x for i in algorithm.ask()], best_not_beaten, best_solutions
-
-
-if __name__ == '__main__':
-    time_start = time.time()
-
-    CLUSTER = [1]
-    ENEMIES = np.array([2, 3, 4, 5, 6, 7, 8])
-
-    print("Running...")
-    env: Environment
-    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
-    env.update_parameter('multiplemode', 'no')
-    env.update_parameter('level', 2)
-    env.update_parameter('randomini', "yes")  # random initial position. This is good for diversity
-    # TODO: If we find solution that beats 6 or more enemies, we can set randomini to "no" to ensure that they are
-    # proper solutions. Also we may vary this parameter during the training process
-
-    pop, best_not_beaten, best_solutions = main(env, n_genes)
-    evaluations = POP_SIZE * N_GENERATIONS
-    randomini_prob = 0
-
-    i = 1
-    while ENEMIES.size != 0:
-        print("Iteration: ", i)
-        # Set enemies
-        CLUSTER = [enemy for enemy in range(1, 9) if enemy not in best_not_beaten[0]]
-        if not CLUSTER:
-            CLUSTER = [np.random.choice(best_not_beaten[0])]
-        if len(CLUSTER) >= 7:
-            env.update_parameter('randomini', "no")
-        else:
-            env.update_parameter('randomini', "yes" if np.random.random() < randomini_prob else "no")
-        if len(CLUSTER) >= 6:  # switch crossover type to try to preserve traits
-            crossover = NNCrossover()
-        else:
-            crossover = SimulatedBinaryCrossover()
-
-        print(f"Cluster (currently beating): {CLUSTER}")  # best performing solution beats these enemies
-        ENEMIES = [enemy for enemy in best_not_beaten[0] if enemy not in CLUSTER]
-        ENEMIES = np.random.choice(ENEMIES, np.random.choice(np.arange(1, len(ENEMIES) + 1)), replace=False)
-        print(f"Enemies (training to beat): {ENEMIES}")  # the population is training to beat these enemies
-        print(f"Random initial position: {env.randomini}")
-        print(f"Crossover type: {crossover.__class__.__name__}")
-        print(f"Enemies beaten in current population: {len(CLUSTER)}/8")
-        print(f"Objective Function Evaluations: {evaluations}")
-
-        # Update number of evaluations
-        evaluations += POP_SIZE * N_GENERATIONS
-        pop, best_not_beaten, best_solutions = main(env, n_genes, population=pop, crossover=crossover)
-        print("best solutions do not beat: ", best_not_beaten)
-
-        i += 1
-        if i > TOTAL_ITERATIONS:
-            break
-        print("----")
-
-    for i, solution in enumerate(best_solutions):
-        np.savetxt(f'{experiment_name}/{solution_file_name}_{i}', solution)
-
-    print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
-    print("Done!")
-=======
     # # ---- Rank-based selection
     # resulting_population = np.concatenate((res.X, [i.X for i in algorithm.ask()]))
     # resulting_population = np.unique(resulting_population, axis=0)
@@ -564,4 +444,3 @@ if __name__ == '__main__':
         print("Done!")
 
 # Initialized changed 1, 100, all
->>>>>>> Stashed changes
