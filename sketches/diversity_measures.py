@@ -59,6 +59,38 @@ def _get_population():
     return solutions
 
 
+def get_most_unique_solutions(population, n_solutions=100, must_include_ids=None):
+    """
+    Get the most unique solutions from the population.
+
+    Args:
+    - population: The population of solutions.
+    - n_solutions: The number of unique solutions to retrieve.
+    - must_include_ids: An optional list of solution IDs that must be included in the final solutions.
+
+    Returns:
+    An array of the most unique solutions.
+    """
+    # Calculate the similarity matrix
+    similarity_matrix = scipy.spatial.distance.pdist(X=population, metric="euclidean")
+    square_matrix = scipy.spatial.distance.squareform(X=similarity_matrix)
+
+    # Sort solutions based on their sum of similarity scores (least similar first)
+    sorted_indices = np.argsort(np.sum(square_matrix, axis=1))
+
+    # Ensure that the must_include_ids are included in the final solutions
+    if must_include_ids:
+        for _id in must_include_ids:
+            # If the ID is not in the sorted indices, add it
+            if _id not in sorted_indices:
+                sorted_indices = np.concatenate(([_id], sorted_indices[:-1]))
+
+    # Select the top n_solutions least similar individuals
+    selected_indices = sorted_indices[:n_solutions]
+
+    return population[selected_indices]
+
+
 if __name__ == '__main__':
     # test different populations
     population = _get_population()
