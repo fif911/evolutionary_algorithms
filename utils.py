@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Optional, Callable
 
 import numpy as np
@@ -105,17 +106,6 @@ def run_pymoo_algorithm(algorithm, problem, experiment_name="pymoo_sms_emoa", po
     return algorithm
 
 
-def initialise_script(experiment_name):
-    if not os.path.exists(experiment_name):
-        os.makedirs(experiment_name)
-
-    # Clean the folder
-    for file in os.listdir(experiment_name):
-        os.remove(os.path.join(experiment_name, file))
-
-    os.environ["SDL_VIDEODRIVER"] = "dummy"
-
-
 def fitness_proportional_selection(population, fitness, n_parents, inverted_fitness=True):
     """Fitness proportional selection (roulette wheel selection)"""
     SMOOTHING_FACTOR = 10
@@ -189,3 +179,42 @@ def read_solutions_from_file(filepath, startswith=None):
 
     solutions = np.array(solutions, dtype=float)
     return solutions
+
+
+def initialise_script(experiment_name, clean_folder=True):
+    if not os.path.exists(experiment_name):
+        os.makedirs(experiment_name)
+
+    # Clean the folder
+    if clean_folder:
+        for file in os.listdir(experiment_name):
+            os.remove(os.path.join(experiment_name, file))
+
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
+
+
+def print_progress_bar(iteration, total, start_time, bar_length=100):
+    progress = (iteration / total)
+    arrow = '=' * int(round(bar_length * progress))
+    spaces = ' ' * (bar_length - len(arrow))
+
+    elapsed_time = time.time() - start_time
+    elapsed_minutes = elapsed_time / 60.0
+    estimated_total_time = elapsed_time / progress if progress > 0 else 0
+    estimated_remaining_time = (estimated_total_time - elapsed_time) / 60.0
+
+    print(f'\r[{arrow}{spaces}] {np.round(progress * 100, 3)}% '
+          f'\t\tElapsed: {np.round(elapsed_minutes, 2)} min '
+          f'\t\tETA: {np.round(estimated_remaining_time, 2)} min', end='')
+
+
+def calculate_ind_score(enemies_beaten, enemy_lives, enemies: Optional[list[int]] = None):
+    # compose aggregate fitness value
+    if not enemies:
+        enemies = [1, 2, 3, 4, 5, 6, 7, 8]
+    score = len(enemies_beaten)
+    for i_enemy in range(len(enemies)):
+        # For example if enemy live and all enemies to beat were 3
+        # enemy life: 80 --> (100 - 80) / 100 * 3 = 20/300 --> 0.6
+        # enemy life: 20 --> (100 - 20) / 100 * 3 = 80/300 --> 2.4
+        score += (100 - enemy_lives[i_enemy]) / (100 * len(enemies))  # Also count evaluated enemies
