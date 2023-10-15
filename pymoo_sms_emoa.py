@@ -20,19 +20,25 @@ import numpy as np
 from evoman.environment import Environment
 
 import pymoo.gradient.toolbox as anp
-from fitness_functions import destroy_and_save_player_life
+from fitness_functions import just_fight_fitness
 from nn_crossover import NNCrossover
 from pymoo.algorithms.moo.sms import SMSEMOA
 from pymoo.config import Config
 from pymoo.core.problem import Problem
 from pymoo.visualization.scatter import Scatter
+from sketches.diversity_measures import get_most_unique_solutions
 from utils import simulation, verify_solution, init_env, initialise_script, print_progress_bar, read_solutions_from_file
 
 Config.warnings['not_compiled'] = False
-
-next_population = read_solutions_from_file("farmed_beats_8", startswith="beats_8")
+solutions = read_solutions_from_file("farmed_beats_8")
+next_population = get_most_unique_solutions(population=solutions, n_solutions=10, must_include_ids=(39, 185))
+# next_population = next_population[population_idexies]
+# original_solutions = read_solutions_from_file("farmed_beats_8", startswith="beats_8_enemies_")
+# next_population = np.concatenate((next_population, original_solutions))
 POP_SIZE = len(next_population)  # POP_SIZE = 100  # TODO: Double-check this
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+
+# next_population # TODO: random population for final runs
 
 # TERMINATION CRIETERIA
 term_critea = "n_gen"  # "n_gen" or "n_eval"
@@ -83,9 +89,16 @@ class objectives(Problem):
 
             dict_enemies[enemy] = []
             for individual_id in range(len(x)):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True,
-                                                      fitness_function=destroy_and_save_player_life))
-
+                if not self.env.randomini:
+                    dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True,
+                                                          fitness_function=just_fight_fitness))
+                else:
+                    # repeat 5 times and average fitness
+                    fitness = []
+                    for _ in range(5):
+                        fitness.append(simulation(self.env, x[individual_id], inverted_fitness=True,
+                                                  fitness_function=just_fight_fitness))
+                    dict_enemies[enemy].append(np.mean(fitness))
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
@@ -95,6 +108,10 @@ class objectives(Problem):
             "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
                                range(len(x))],
         }
+        # each enemy is a separate objective
+        # objectives_fitness = {
+        #     f"objective_{enemy}": dict_enemies[enemy] for enemy in self.enemies
+        # }
 
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
@@ -102,6 +119,7 @@ class objectives(Problem):
 def plot_pareto_fronts(res, best_solutions_idx: list[int]):
     """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
     print(f"Plotting {res.F.shape[0]} solutions")
+    res.F = 1 / res.F
 
     plot = Scatter(labels=["Hard enemies", "Medium Enemies", "Easy enemies"], title="Pareto Front")
     plot.add(res.F, color="red")
