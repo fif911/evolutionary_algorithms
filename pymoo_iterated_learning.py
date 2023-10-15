@@ -29,7 +29,6 @@ from pymoo.util.running_metric import RunningMetricAnimation
 from pymoo.visualization.scatter import Scatter
 from scipy.spatial.distance import pdist
 
-from sketches.diversity_measures import number_of_similar_solutions_per_individual
 from utils import simulation, verify_solution, init_env
 
 np.random.seed(1)

@@ -7,8 +7,7 @@ from evoman.environment import Environment
 from demo_controller import player_controller
 
 
-def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False,
-               fitness_function: Callable = None):
+def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False):
     """Run one episode and return the inverted fitness for minimization problem
 
     Fitness function:
@@ -18,9 +17,8 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     return_enemies: if True, return the player life, enemy life and time
     """
     f, p, e, t = env.play(pcont=xm)
-    if fitness_function is not None:
-        f = fitness_function(p, e, t)
 
+    f = (100 - e) + np.log(p + 0.001)
     if not inverted_fitness:
         return f  # return the original fitness
     if verbose:
