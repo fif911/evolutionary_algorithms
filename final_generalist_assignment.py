@@ -9,8 +9,8 @@ Algorithm paper: https://sci-hub.se/https://doi.org/10.1016/j.ejor.2006.08.008
 Docs link: https://pymoo.org/algorithms/moo/sms.html
 """
 import copy
-import os
 import time
+import uuid
 
 import numpy as np
 from evoman.environment import Environment
@@ -19,12 +19,12 @@ from scipy.spatial.distance import pdist
 import pymoo.gradient.toolbox as anp
 from nn_crossover import NNCrossover
 from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.config import Config
 from pymoo.core.population import Population
 from pymoo.core.problem import Problem
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.gauss import GaussianMutation
-# from pymoo.visualization.scatter import Scatter
-from utils import simulation, verify_solution, init_env
+from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
 N_REPEATS = 10
@@ -47,13 +47,9 @@ global ENEMIES
 global CLUSTER
 
 # Create experiment folder
-experiment_name = 'pymoo_sms_emoa'
-solution_file_name = 'pymoo_sms_emoa_best.txt'
-if not os.path.exists(experiment_name):
-    os.makedirs(experiment_name)
-
-# Set SDL to use the dummy NULL video driver, so it doesn't need a windowing system.
-os.environ["SDL_VIDEODRIVER"] = "dummy"
+experiment_name = 'final_generalist_assignment'
+initialise_script(experiment_name=experiment_name, clean_folder=False)
+Config.warnings['not_compiled'] = False
 
 
 class objectives(Problem):
@@ -183,6 +179,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
 
 if __name__ == '__main__':
     for trial in range(0, N_REPEATS):
+        trial_uuid = uuid.uuid4()
         time_start = time.time()
         # Initialize
         EVALUATIONS, ENEMIES = 0, np.array([1])
@@ -256,13 +253,13 @@ if __name__ == '__main__':
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
 
-            if iterations == 0: # Store initial value of population
+            if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
-            elif most_beaten > max_enemies_beaten: # Substitute best performing
-                best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
+            elif most_beaten > max_enemies_beaten:  # Substitute best performing
+                best_performing_array[-1] = copy.deepcopy(most_beaten)  # Because this lacks one behind next update
 
             # --- Print some settings
-            print("NEW ITERATION: ", iterations)
+            print(f"Iteration: {iterations}; Evaluations: {EVALUATIONS}")
             print("Population Size: ", POP_SIZE)
             print("Mutation Probability: ", pmut)
             print("Crossover Type: ", crossovermode)
@@ -334,8 +331,8 @@ if __name__ == '__main__':
             elif max_enemies_beaten == best_performing:
                 pass
             # Append to best_performing
-            best_performing_array.append(max_enemies_beaten) # Append because of after ... evaluations after previous update
-
+            # Append because of after ... evaluations after previous update
+            best_performing_array.append(max_enemies_beaten)
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
@@ -345,7 +342,7 @@ if __name__ == '__main__':
             print("----------------------------------------------------------------------------------")
             # Increase iterations
             iterations += 1
-        np.savetxt("FITNESS" + str(trial), FITNESS)
-        np.savetxt("max_enemies_beaten" + str(trial), np.array(best_performing_array))
+        np.savetxt(f"{experiment_name}/FITNESS_trial_{trial}_{trial_uuid}", FITNESS)
+        np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial}_{trial_uuid}", np.array(best_performing_array))
         print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
         print("Done!")
