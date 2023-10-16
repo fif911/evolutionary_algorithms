@@ -256,10 +256,10 @@ if __name__ == '__main__':
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
 
-            if most_beaten > max_enemies_beaten: # Substitute best performing
-                best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
-            elif iterations == 0: # Store initial value of population
+            if iterations == 0: # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
+            elif most_beaten > max_enemies_beaten: # Substitute best performing
+                best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
 
             # --- Print some settings
             print("NEW ITERATION: ", iterations)
