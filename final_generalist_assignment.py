@@ -178,9 +178,11 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
 
 
 if __name__ == '__main__':
+    print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Staring script\n")
+    time_start = time.time()
     for trial in range(0, N_REPEATS):
+        print(f"Staring repeat {trial + 1}/{N_REPEATS}")
         trial_uuid = uuid.uuid4()
-        time_start = time.time()
         # Initialize
         EVALUATIONS, ENEMIES = 0, np.array([1])
         # Environment
@@ -342,7 +344,7 @@ if __name__ == '__main__':
             print("----------------------------------------------------------------------------------")
             # Increase iterations
             iterations += 1
-        np.savetxt(f"{experiment_name}/FITNESS_trial_{trial}_{trial_uuid}", FITNESS)
-        np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial}_{trial_uuid}", np.array(best_performing_array))
-        print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
-        print("Done!")
+        np.savetxt(f"{experiment_name}/FITNESS_trial_{trial + 1}_{trial_uuid}", FITNESS)
+        np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial + 1}_{trial_uuid}", np.array(best_performing_array))
+        print(f"Total time (minutes cumulative): {(time.time() - time_start) / 60:.2f}")
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} ---- Done!\n")
