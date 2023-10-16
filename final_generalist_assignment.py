@@ -128,6 +128,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
         raise ValueError("Crossover mode not recognized")
 
     # TODO: Are we just dropping the new population for the algorithm that was already hashed ???
+    # TODO: Bugfix the algorithm has_next
     if algorithm is None:
         if population is None:
             algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=crossover,
