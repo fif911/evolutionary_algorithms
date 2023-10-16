@@ -180,7 +180,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
     return [i.X for i in algorithm.ask()], best_x, max_enemies_beaten, best_enemies, algorithm
 
 
-N_REPEATS = 8
+N_REPEATS = 1
 
 if __name__ == '__main__':
     for trial in range(0, N_REPEATS):
@@ -223,41 +223,41 @@ if __name__ == '__main__':
         FITNESS = np.zeros((800, 301))  # TODO: Why these dimensions?
         while EVALUATIONS < MAX_EVALUATIONS:
             # Evaluate population --> beat rates
-            for enemy in range(1, 9):
-                beaten[enemy] = 0
-                beaten2[enemy] = beaten2[enemy][1:] + [0]
-
-            most_beaten, most_x = 0, ""
-            for i_x, x in enumerate(POP):
-                enemy_beaten = 0
-                for enemy in range(1, 9):
-                    env.update_parameter('enemies', [enemy])
-                    p, e, t = simulation(env, x, verbose=True)
-                    f = (100 - e) + np.log(p + 0.001)
-                    # Store fitness
-                    FITNESS[int(i_x + (enemy - 1) * 100), iterations] = f
-
-                    # Update beaten
-                    if (e == 0) and (p > 0):
-                        beaten[enemy] += 1
-                        beaten2[enemy][-1] += 1
-                        enemy_beaten += 1
-                    if i_x == (len(POP) - 1):
-                        beaten2[enemy][-1] = beaten2[enemy][-1] / popsize_or * 100
-                        beaten[enemy] = beaten[enemy] / popsize_or * 100
-                if enemy_beaten >= most_beaten:
-                    most_beaten = enemy_beaten
-                    best_x = copy.deepcopy(x)
+            # for enemy in range(1, 9):
+            #     beaten[enemy] = 0
+            #     beaten2[enemy] = beaten2[enemy][1:] + [0]
+            #
+            # most_beaten, most_x = 0, ""
+            # for i_x, x in enumerate(POP):
+            #     enemy_beaten = 0
+            #     for enemy in range(1, 9):
+            #         env.update_parameter('enemies', [enemy])
+            #         p, e, t = simulation(env, x, verbose=True)
+            #         f = (100 - e) + np.log(p + 0.001)
+            #         # Store fitness
+            #         FITNESS[int(i_x + (enemy - 1) * 100), iterations] = f
+            #
+            #         # Update beaten
+            #         if (e == 0) and (p > 0):
+            #             beaten[enemy] += 1
+            #             beaten2[enemy][-1] += 1
+            #             enemy_beaten += 1
+            #         if i_x == (len(POP) - 1):
+            #             beaten2[enemy][-1] = beaten2[enemy][-1] / popsize_or * 100
+            #             beaten[enemy] = beaten[enemy] / popsize_or * 100
+            #     if enemy_beaten >= most_beaten:
+            #         most_beaten = enemy_beaten
+            #         best_x = copy.deepcopy(x)
 
             # TODO: Remove??
-            if most_beaten >= best_performing:
-                best_performing = copy.deepcopy(most_beaten)
+            # if most_beaten >= best_performing:
+            #     best_performing = copy.deepcopy(most_beaten)
 
             print("NEW ITERATION: ", iterations)
             print("Population Size: ", POP_SIZE)
             print("Mutation Probability: ", pmut)
             print("Crossover Type: ", crossovermode)
-            print(f"\tEnemies beaten: {most_beaten}")
+            # print(f"\tEnemies beaten: {most_beaten}")
             print("\tCurrent Record: ", best_performing)
             print("\tBeaten Percentages Current Population [%] and STD over " + str(nhistory) + " Runs [%]")
             for enemy in range(1, 9):
@@ -277,7 +277,7 @@ if __name__ == '__main__':
             if sum(beaten_vals) == 0:
                 probs = np.ones(8) / 8
             else:
-                probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.01, beaten_vals)
+                probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.000001, beaten_vals)
                 probs = probs / sum(probs)
 
             # Choose 3 enemies with inverse probabilities.
@@ -317,15 +317,15 @@ if __name__ == '__main__':
             print(beaten3)
 
             # Save solutions to the file
-            merged_file_name = f"solutions_merged_{trial}.txt"
-            if max_enemies_beaten > best_performing:
-                best_performing = max_enemies_beaten
-                BEST_x = best_x[0]
-                np.savetxt(merged_file_name, BEST_x)
-            elif max_enemies_beaten == best_performing:
-                BEST_x = np.loadtxt(merged_file_name)
-                BEST_x = np.concatenate([BEST_x, best_x[0]], axis=0)
-                np.savetxt(merged_file_name, BEST_x)
+            # merged_file_name = f"solutions_merged_{trial}.txt"
+            # if max_enemies_beaten > best_performing:
+            #     best_performing = max_enemies_beaten
+            #     BEST_x = best_x[0]
+            #     np.savetxt(merged_file_name, BEST_x)
+            # elif max_enemies_beaten == best_performing:
+            #     BEST_x = np.loadtxt(merged_file_name)
+            #     BEST_x = np.concatenate([BEST_x, best_x[0]], axis=0)
+            #     np.savetxt(merged_file_name, BEST_x)
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
