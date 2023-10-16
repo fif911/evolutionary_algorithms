@@ -109,7 +109,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
     problem = objectives(
         env=env,
         n_genes=n_genes,
-        enemies=[1, 2, 3, 4, 5, 6, 7, 8],
+        enemies=ALL_ENEMIES,
         n_objectives=len(ENEMIES) + (len(CLUSTER) > 0)
     )
 
@@ -274,7 +274,8 @@ if __name__ == '__main__':
             if sum(beaten_vals) == 0:
                 probs = np.ones(8) / 8
             else:
-                probs = sum(beaten_vals) / np.where(beaten_vals == 0, 0.000001, beaten_vals)
+                min_val = np.min(np.where(beaten_vals == 0, 999, beaten_vals))
+                probs = sum(beaten_vals) / np.where(beaten_vals == 0, min_val, beaten_vals)
                 probs = probs / sum(probs)
 
             # Choose 3 enemies with inverse probabilities.
@@ -331,5 +332,6 @@ if __name__ == '__main__':
             # Increase iterations
             iterations += 1
         np.savetxt("FITNESS" + str(trial), FITNESS)
+        np.savetxt("max_enemies_beaten" + str(trial), np.array([max_enemies_beaten]))
         print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
         print("Done!")
