@@ -66,6 +66,7 @@ class objectives(Problem):
     env: Environment
     last_iteration_evaluation_results: Optional[dict] = None
     last_iteration_objectives_fitness: Optional[dict] = None
+    last_iteration_max_enemies_beaten = None
 
     def __init__(self, env: Environment, n_genes: int, enemies: list[int], n_objectives):
         self.env = env
@@ -90,13 +91,28 @@ class objectives(Problem):
         # Initialize
         dict_enemies = {}
         # Get fitness for each enemy
+        dict_beaten_enemies = {}
         for enemy in self.enemies:
             self.env.update_parameter('enemies', [enemy])
 
             dict_enemies[enemy] = []
+            dict_beaten_enemies[enemy] = []
             for individual_id in range(len(x)):
-                dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True,
-                                                      fitness_function=just_fight_fitness))
+                p, e, t = simulation(self.env, x[individual_id], verbose=True)
+                f = 1 / max(just_fight_fitness(p, e, t), 0.00001)
+                dict_enemies[enemy].append(f)
+
+                is_enemy_beaten = e == 0 and p > 0
+                dict_beaten_enemies[enemy].append(is_enemy_beaten)
+
+        # calculate max enemies beaten
+        max_enemies_beaten = 0
+        for ind in range(len(x)):
+            enemies_beaten = sum([dict_beaten_enemies[enemy][ind] for enemy in self.enemies])
+            if enemies_beaten > max_enemies_beaten:
+                max_enemies_beaten = enemies_beaten
+        self.last_iteration_max_enemies_beaten = max_enemies_beaten
+
         # Return fitness outputs for enemies
         objectives_fitness = {
             "objective_hard": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [1, 6]]) for ind_id in
@@ -169,7 +185,7 @@ def main(env: Environment, n_genes: int, population=None):
     elif term_critea == "n_gen":
         algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
 
-    datastore = []  # list with: (n_gens, n_evals, ind_id, f1, f2, f3, f4, f5, f6, f7, f8, obj_hard, obj_medium, obj_easy)
+    datastore = []  # list with: (n_gens, n_evals, max_enemies_beaten, ind_id, f1, f2, f3, f4, f5, f6, f7, f8, obj_hard, obj_medium, obj_easy)
     while algorithm.has_next():
         # ask the algorithm for the next solution to be evaluated
         pop = algorithm.ask()
@@ -181,7 +197,8 @@ def main(env: Environment, n_genes: int, population=None):
                            problem.last_iteration_evaluation_results.keys()]
             ind_objective_fitness = [1 / problem.last_iteration_objectives_fitness[objective][ind_id] for objective in
                                      problem.last_iteration_objectives_fitness.keys()]
-            datastore_row = [algorithm.n_gen, algorithm.evaluator.n_eval, ind_id] + ind_fitness + ind_objective_fitness
+            datastore_row = [algorithm.n_gen, algorithm.evaluator.n_eval, problem.last_iteration_max_enemies_beaten,
+                             ind_id] + ind_fitness + ind_objective_fitness
             datastore.append(datastore_row)
 
         # returned the evaluated individuals which have been evaluated or even modified
@@ -244,7 +261,7 @@ if __name__ == '__main__':
 
         datastore = main(env, n_genes, population=next_population)
         df = pd.DataFrame(datastore, columns=[
-            'n_gens', 'n_evals', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
+            'n_gens', 'n_evals', 'max_enemies_beaten', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
             'obj_hard', 'obj_medium', 'obj_easy'
         ])
         df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore{repeat}_{uuid.uuid4()}.csv", index=False)
