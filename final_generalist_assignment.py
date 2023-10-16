@@ -30,16 +30,16 @@ from utils import simulation, verify_solution, init_env
 N_REPEATS = 10
 MAX_EVALUATIONS = 50_000
 N_GENERATIONS = 10
-POP_SIZE = 20 # Subpopulation
-WHOLE_POP_SIZE = 100 # whole population
+POP_SIZE = 20  # Subpopulation
+WHOLE_POP_SIZE = 100  # whole population
 
-pmut, vsigma, pcross = 1, 1, 1 # Mutation probability, mutation strength, crossover probability
-crossovermode = "NN" # NN or SBX
+pmut, vsigma, pcross = 1, 1, 1  # Mutation probability, mutation strength, crossover probability
+crossovermode = "NN"  # NN or SBX
 
-min_n_enemies = 3 # Minimum number of enemies to train on
-max_n_enemies = 3 # Maximum number of enemies to train on
+min_n_enemies = 3  # Minimum number of enemies to train on
+max_n_enemies = 3  # Maximum number of enemies to train on
 
-nhistory = 10 # For keeping track of standard deviation of beaten enemies
+nhistory = 10  # For keeping track of standard deviation of beaten enemies
 n_hidden_neurons = 10
 
 # Global variables
@@ -88,7 +88,7 @@ class objectives(Problem):
                     dict_enemies[enemy].append(simulation(self.env, x[individual_id], inverted_fitness=True))
                 else:
                     sims = []
-                    for rep_rand in range(0, 5): # Repeat multiple times to get a more accurate fitness
+                    for rep_rand in range(0, 5):  # Repeat multiple times to get a more accurate fitness
                         sims.append(simulation(self.env, x[individual_id], inverted_fitness=True))
                     dict_enemies[enemy].append(np.mean(sims))
         # If we have clusters, get the fitness for each cluster
@@ -103,6 +103,7 @@ class objectives(Problem):
 
         # Get the fitness for the whole population and all objectives
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
+
 
 def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcross=1, crossovermode="NN",
          algorithm=None):
@@ -123,7 +124,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
 
     # --- Set the algorithm if it is not passed
     if algorithm is None:
-        if population is None: # No population passed
+        if population is None:  # No population passed
             algorithm = SMSEMOA(pop_size=POP_SIZE, crossover=crossover,
                                 mutation=GaussianMutation(prob=pmut, sigma=vsigma))  # , seed=1
         else:
@@ -141,11 +142,11 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
     step = 0
     while algorithm.has_next():
         print("\t\t", np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
-        if (step == 0) and (algo_label == True): # If we are in the first step + we have an algorithm
+        if (step == 0) and (algo_label == True):  # If we are in the first step + we have an algorithm
             pop = Population(population)
         else:
             pop = algorithm.ask()
-        
+
         algorithm.evaluator.eval(problem, pop)
         algorithm.tell(infills=pop)
         # Increase step
@@ -166,11 +167,11 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
                                                                           print_results=False)
         enemy_lives = np.array(enemy_lives)
         # Get the number of enemies beaten
-        if len(enemies_beaten) > max_enemies_beaten: # New record
+        if len(enemies_beaten) > max_enemies_beaten:  # New record
             max_enemies_beaten = len(enemies_beaten)
             best_x = [x]
             best_enemies = np.where(enemy_lives == 0, 1, 0)
-        elif len(enemies_beaten) == max_enemies_beaten: # Equal record
+        elif len(enemies_beaten) == max_enemies_beaten:  # Equal record
             best_x.append(x)
             best_enemies += np.where(enemy_lives == 0, 1, 0)
 
@@ -189,7 +190,7 @@ if __name__ == '__main__':
         env, n_genes = init_env(experiment_name, [1], n_hidden_neurons)
         env.update_parameter('multiplemode', 'no')
         env.update_parameter('randomini', 'no')
-        env.update_parameter("level", 2)    
+        env.update_parameter("level", 2)
         print("----------------------------------------------------------------------------------")
         # --------------------------- Initialize population
         # Sample random initial population
@@ -200,26 +201,29 @@ if __name__ == '__main__':
         # --------------------------- Iterated Learning/Constrained Led Approach
         assert nhistory % 2 == 0, "nhistory must be even"
         # Initialize
-        iterations = 0 # Number of iterations
-        best_performing = 0 # Most enemies beaten by a single individual
-        BEST_x = "" # Best individual
+        iterations = 0  # Number of iterations
+        best_performing = 0  # Most enemies beaten by a single individual
+        BEST_x = ""  # Best individual
 
         FITNESS = np.zeros((int(8 * WHOLE_POP_SIZE), int(MAX_EVALUATIONS / (POP_SIZE * N_GENERATIONS) + 1)))  # fITNESS
 
-        algos = {} # Cache algorithms
-        beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0} # Number of enemies beaten in current population
+        algos = {}  # Cache algorithms
+        # Number of enemies beaten in current population
+        beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
+        # Number of enemies beaten in current population over time nhistory
         beaten2 = {1: nhistory * [0], 2: nhistory * [0], 3: nhistory * [0], 4: nhistory * [0], 5: nhistory * [0],
-                   6: nhistory * [0], 7: nhistory * [0], 8: nhistory * [0]} # Number of enemies beaten in current population over time nhistory
-        beaten3 = np.zeros(8) # Average number of enemies beaten in current Pareto front for the most generalizable enemies
+                   6: nhistory * [0], 7: nhistory * [0],
+                   8: nhistory * [0]}
+        # Average number of enemies beaten in current Pareto front for the most generalizable enemies
+        beaten3 = np.zeros(8)
 
-        
         while EVALUATIONS < MAX_EVALUATIONS:
             # ---- Evaluate population --> beat rates
             # Set to zero/remove oldest value
             for enemy in range(1, 9):
                 beaten[enemy] = 0
                 beaten2[enemy] = beaten2[enemy][1:] + [0]
-            
+
             # Evaluate population
             most_beaten, most_x = 0, ""
             for i_x, x in enumerate(POP):
@@ -238,7 +242,7 @@ if __name__ == '__main__':
                         beaten[enemy] += 1
                         beaten2[enemy][-1] += 1
                         enemy_beaten += 1
-                    if i_x == (len(POP) - 1): # Last one --> Normalize
+                    if i_x == (len(POP) - 1):  # Last one --> Normalize
                         beaten2[enemy][-1] = beaten2[enemy][-1] / popsize_or * 100
                         beaten[enemy] = beaten[enemy] / popsize_or * 100
                 # Reset
@@ -317,7 +321,7 @@ if __name__ == '__main__':
 
             # Check for best performing in Pareto front --> before we saved these x-values, but now we don't because of speed considerations
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
-            #, so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
+            # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
             if max_enemies_beaten > best_performing:
                 best_performing = max_enemies_beaten
             elif max_enemies_beaten == best_performing:
