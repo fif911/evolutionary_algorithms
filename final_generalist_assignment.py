@@ -203,6 +203,7 @@ if __name__ == '__main__':
         # Initialize
         iterations = 0  # Number of iterations
         best_performing = 0  # Most enemies beaten by a single individual
+        best_performing_array = []  # Most enemies beaten by a single individual over time
         BEST_x = ""  # Best individual
 
         FITNESS = np.zeros((int(8 * WHOLE_POP_SIZE), int(MAX_EVALUATIONS / (POP_SIZE * N_GENERATIONS) + 1)))  # fITNESS
@@ -236,7 +237,7 @@ if __name__ == '__main__':
                     # Get fitness
                     f = (100 - e) + np.log(p + 0.001)
                     # Store fitness
-                    FITNESS[int(i_x + (enemy - 1) * 100), iterations] = f
+                    FITNESS[int(i_x + (enemy - 1) * WHOLE_POP_SIZE), iterations] = f
                     # Update beaten
                     if (e == 0) and (p > 0):
                         beaten[enemy] += 1
@@ -253,6 +254,8 @@ if __name__ == '__main__':
             # Update best performing
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
+            # Append to best_performing
+            best_performing_array.append(most_beaten)
 
             # --- Print some settings
             print("NEW ITERATION: ", iterations)
@@ -326,6 +329,10 @@ if __name__ == '__main__':
                 best_performing = max_enemies_beaten
             elif max_enemies_beaten == best_performing:
                 pass
+            # Append to best_performing
+            if max_enemies_beaten > most_beaten:
+                best_performing_array[-1] = copy.deepcopy(max_enemies_beaten)
+
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
@@ -336,6 +343,6 @@ if __name__ == '__main__':
             # Increase iterations
             iterations += 1
         np.savetxt("FITNESS" + str(trial), FITNESS)
-        np.savetxt("max_enemies_beaten" + str(trial), np.array([max_enemies_beaten]))
+        np.savetxt("max_enemies_beaten" + str(trial), np.array(best_performing_array))
         print(f"Total time (minutes): {(time.time() - time_start) / 60:.2f}")
         print("Done!")
