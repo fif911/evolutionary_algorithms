@@ -254,8 +254,10 @@ if __name__ == '__main__':
             # Update best performing
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
-            # Append to best_performing
-            best_performing_array.append(most_beaten)
+                if iterations != 0:
+                    best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
+                else:
+                    best_performing_array.append(copy.deepcopy(most_beaten))
 
             # --- Print some settings
             print("NEW ITERATION: ", iterations)
@@ -330,8 +332,7 @@ if __name__ == '__main__':
             elif max_enemies_beaten == best_performing:
                 pass
             # Append to best_performing
-            if max_enemies_beaten > most_beaten:
-                best_performing_array[-1] = copy.deepcopy(max_enemies_beaten)
+            best_performing_array.append(max_enemies_beaten) # Append because of after ... evaluations after previous update
 
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
