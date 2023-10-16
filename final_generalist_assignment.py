@@ -29,6 +29,7 @@ from utils import simulation, verify_solution, init_env
 TOTAL_ITERATIONS = 2
 N_GENERATIONS = 25
 POP_SIZE = 20
+WHOLE_POP_SIZE = 100
 
 global ENEMIES
 global CLUSTER
@@ -59,11 +60,6 @@ class objectives(Problem):
 
         x - list of individuals in the population
         out - dictionary with the fitness outputs
-
-        # when we have multiple enemies we need to average the fitness somehow
-        # Ideas: mean of the fitness will show how agent performs with both enemies
-        #        max will show how agent performs with the worst enemy (this does not reflect the performance with
-        #        another enemy)
         """
 
         # Initialize
@@ -188,54 +184,27 @@ N_REPEATS = 8
 
 if __name__ == '__main__':
     for trial in range(0, N_REPEATS):
-        time_start = time.time()
-        print("----------------------------------------------------------------------------------")
         # Environment
         env, n_genes = init_env(experiment_name, [1], n_hidden_neurons)
         env.update_parameter('multiplemode', 'no')
-        env.update_parameter('level', 2)
-        env.update_parameter('randomini', "no")
+
+        time_start = time.time()
+        print("----------------------------------------------------------------------------------")
+
         # Parameters
-        pop = np.random.uniform(-1, 1, size=(100, 265))
+        pop = np.random.uniform(-1, 1, size=(WHOLE_POP_SIZE, 265))
         EVALUATIONS = 0
         ENEMIES = np.array([1])
-        # N_GENERATIONS = 30
-        # POP_SIZE = 50
-        # pmut, vsigma = 0.01, 1
-        # # Part 1 --> focus on enemies 1 and 7
-        # print("\tPopulation 1")
-        # CLUSTER = [[1]]
-        # ENEMIES = np.array([7])
-        # ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
-
-        # env.update_parameter('enemies', ALL_ENEMIES)
-        # pop0 = main(env, n_genes, pmut = pmut, vsigma= vsigma, crossovermode = "SBX")
-        # EVALUATIONS = N_GENERATIONS * POP_SIZE
-
-        # # Part 2 --> focus on enemies 4 and 6
-        # print("\n\tPopulation 2")
-        # CLUSTER = [[4]]
-        # ENEMIES = np.array([6])
-        # ALL_ENEMIES = CLUSTER[0] + list(ENEMIES)
-
-        # env.update_parameter('enemies', ALL_ENEMIES)
-        # pop = main(env, n_genes, pmut = pmut, vsigma= vsigma, crossovermode = "SBX")
-
-        # # Combine populations
-        # pop = pop0 + pop
-        # EVALUATIONS += N_GENERATIONS * POP_SIZE
 
         # Save population and population size
         POP = copy.deepcopy(pop)
         popsize_or = copy.deepcopy(len(pop))
 
         # --------------------------- Iterated Learning/Constrained Led Approach
-        # print("Training Round 6", end="\r")
         N_GENERATIONS = 10  #
         POP_SIZE = 20
         pmut, vsigma, pcross = 1, 1, 1
         crossovermode = "NN"
-        env.update_parameter('randomini', "no")
 
         min_n_enemies = 3
         max_n_enemies = 3
@@ -253,9 +222,8 @@ if __name__ == '__main__':
         BEST_x = ""
 
         iterations = 0
-        FITNESS = np.zeros((800, 301))
+        FITNESS = np.zeros((800, 301))  # TODO: Why these dimentions?
         while EVALUATIONS < 50000:
-            # env.update_parameter('randomini', "yes")
             # Evaluate population --> beat rates
             for enemy in range(1, 9):
                 beaten[enemy] = 0
@@ -291,14 +259,6 @@ if __name__ == '__main__':
                     BEST_x = copy.deepcopy(best_x)
                 best_performing = copy.deepcopy(most_beaten)
                 np.savetxt("BEST_SOLUTION" + str(trial), BEST_x)
-
-            # Update params
-            # min_percentage = min(list(beaten.values()))
-            # pmut = (1 / (max([0, min_percentage - 10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
-            # vsigma = (1 / (max([0, min_percentage -  10])**1.1 + 0.5)) / (1 / 0.5) * 1 # Exponential decrease if minimum %beaten is 10
-            # if iterations < 10: # Switch to Neural Net Crossover from SBX
-            #    crossovermode = "SBX"
-            # else:
 
             print("NEW ITERATION: ", iterations)
             print("Population Size: ", POP_SIZE)
@@ -357,25 +317,27 @@ if __name__ == '__main__':
                 pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode)
+                # Cache algorithm instance
                 algos = {algorithm_hash: algorithm}
 
+            beaten3 += best_enemies  # TODO: What exactly is beaten3
+            print(beaten3)
+
+            # Save solutions to the file
+            merged_file_name = f"solutions_merged_{trial}.txt"
             if max_enemies_beaten > best_performing:
                 best_performing = max_enemies_beaten
                 BEST_x = best_x[0]
-                np.savetxt("BEST_SOLUTION" + str(trial), BEST_x)
+                np.savetxt(merged_file_name, BEST_x)
             elif max_enemies_beaten == best_performing:
-                BEST_x = np.loadtxt("BEST_SOLUTION" + str(trial))
+                BEST_x = np.loadtxt(merged_file_name)
                 BEST_x = np.concatenate([BEST_x, best_x[0]], axis=0)
-                np.savetxt("BEST_SOLUTION" + str(trial), BEST_x)
-
-            ## Save algo
-            beaten3 += best_enemies
-            print(beaten3)
+                np.savetxt(merged_file_name, BEST_x)
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
-            POP += copy.deepcopy(pop)
-            EVALUATIONS += N_GENERATIONS * POP_SIZE
+            POP += copy.deepcopy(pop)  # append new population to the whole
+            EVALUATIONS += N_GENERATIONS * POP_SIZE  # calculate total amount of evaluations so far
             print("\tEvaluations: ", EVALUATIONS)
             print("----------------------------------------------------------------------------------")
             # Increase iterations
