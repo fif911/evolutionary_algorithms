@@ -1,12 +1,12 @@
 import os
 
 import numpy as np
-import scipy
+from scipy import spatial
 
 
 def calc_similarity_matrix(population: np.array, threshold: float = 1, metric: str = "euclidean"):
     """
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html
+    https://docs.scipy.org/doc/scipy/reference/generated/spatial.distance.pdist.html
 
     The distance metric to use. The distance function can be ‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
 
@@ -18,8 +18,8 @@ def calc_similarity_matrix(population: np.array, threshold: float = 1, metric: s
 
     returns similarity matrix with True/False values
     """
-    condensed_matrix = scipy.spatial.distance.pdist(X=population, metric=metric)
-    square_matrix = scipy.spatial.distance.squareform(X=condensed_matrix)
+    condensed_matrix = spatial.distance.pdist(X=population, metric=metric)
+    square_matrix = spatial.distance.squareform(X=condensed_matrix)
     return square_matrix < threshold  # return similarity matrix with True/False values
 
 
@@ -72,8 +72,8 @@ def get_most_unique_solutions(population, n_solutions=100, must_include_ids=None
     An array of the most unique solutions.
     """
     # Calculate the similarity matrix
-    similarity_matrix = scipy.spatial.distance.pdist(X=population, metric="euclidean")
-    square_matrix = scipy.spatial.distance.squareform(X=similarity_matrix)
+    similarity_matrix = spatial.distance.pdist(X=population, metric="euclidean")
+    square_matrix = spatial.distance.squareform(X=similarity_matrix)
 
     # Sort solutions based on their sum of similarity scores (least similar first)
     sorted_indices = np.argsort(np.sum(square_matrix, axis=1))
