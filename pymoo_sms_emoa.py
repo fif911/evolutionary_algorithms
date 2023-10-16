@@ -199,23 +199,38 @@ def main(env: Environment, n_genes: int, population=None):
     max_enemies_beaten = 0
     best_solutions = []
     best_solutions_idx = []
+    win_id = 0
+    win_id_most_player_lives = 0
     for i, x in enumerate(res.X):
-        enemies_beaten = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], print_results=False)
+        enemies_beaten, _, _, player_lifes, _ = verify_solution(env, x,
+                                                                enemies=[1, 2, 3, 4, 5,
+                                                                         6, 7, 8],
+                                                                print_results=False,
+                                                                vv=True)
+        enemies_beaten = len(enemies_beaten)
+
         if enemies_beaten > max_enemies_beaten:
             max_enemies_beaten = enemies_beaten
             best_solutions = [x]  # reset the list because we found a better performing solution
             best_solutions_idx = [i]
+            win_id = i
+            win_id_most_player_lives = sum(player_lifes)
         elif enemies_beaten == max_enemies_beaten:
             best_solutions.append(x)  # add to the list the solution that beats the same number of enemies
             best_solutions_idx.append(i)
+            if sum(player_lifes) > win_id_most_player_lives:
+                win_id = i
+                win_id_most_player_lives = sum(player_lifes)
 
     print(f"Most enemies beaten: {max_enemies_beaten}; Number of these solutions: {len(best_solutions)}")
     print(f"Individuals evaluated: {algorithm.evaluator.n_eval}")
 
-    if max_enemies_beaten == 8:
-        # save the best solutions to files only if they beat all enemies
-        for i, solution in enumerate(best_solutions):
-            np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{i}_{uuid.uuid4()}.txt', solution)
+    # # save the best solutions to files only if they beat all enemies
+    # for i, solution in enumerate(best_solutions):
+    #     np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{i}_{uuid.uuid4()}.txt', solution)
+
+    # save the best of the best solution
+    np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{uuid.uuid4()}.txt', res.X[win_id])
 
     plot_pareto_fronts(res, best_solutions_idx)
     return datastore
