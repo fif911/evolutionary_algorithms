@@ -26,8 +26,8 @@ from pymoo.operators.mutation.gauss import GaussianMutation
 from pymoo.visualization.scatter import Scatter
 from utils import simulation, verify_solution, init_env
 
-TOTAL_ITERATIONS = 2
-N_GENERATIONS = 25
+MAX_EVALUATIONS = 50_000
+N_GENERATIONS = 10
 POP_SIZE = 20
 WHOLE_POP_SIZE = 100
 
@@ -201,8 +201,6 @@ if __name__ == '__main__':
         popsize_or = copy.deepcopy(len(pop))
 
         # --------------------------- Iterated Learning/Constrained Led Approach
-        N_GENERATIONS = 10  #
-        POP_SIZE = 20
         pmut, vsigma, pcross = 1, 1, 1
         crossovermode = "NN"
 
@@ -222,8 +220,8 @@ if __name__ == '__main__':
         BEST_x = ""
 
         iterations = 0
-        FITNESS = np.zeros((800, 301))  # TODO: Why these dimentions?
-        while EVALUATIONS < 50000:
+        FITNESS = np.zeros((800, 301))  # TODO: Why these dimensions?
+        while EVALUATIONS < MAX_EVALUATIONS:
             # Evaluate population --> beat rates
             for enemy in range(1, 9):
                 beaten[enemy] = 0
@@ -251,14 +249,9 @@ if __name__ == '__main__':
                     most_beaten = enemy_beaten
                     best_x = copy.deepcopy(x)
 
+            # TODO: Remove??
             if most_beaten >= best_performing:
-                if most_beaten == best_performing:
-                    BEST_x = np.loadtxt("BEST_SOLUTION" + str(trial))
-                    BEST_x = np.concatenate([BEST_x, best_x], axis=0)
-                else:
-                    BEST_x = copy.deepcopy(best_x)
                 best_performing = copy.deepcopy(most_beaten)
-                np.savetxt("BEST_SOLUTION" + str(trial), BEST_x)
 
             print("NEW ITERATION: ", iterations)
             print("Population Size: ", POP_SIZE)
