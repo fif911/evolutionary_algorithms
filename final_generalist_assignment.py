@@ -201,6 +201,7 @@ if __name__ == '__main__':
         # --------------------------- Iterated Learning/Constrained Led Approach
         assert nhistory % 2 == 0, "nhistory must be even"
         # Initialize
+        max_enemies_beaten = 0
         iterations = 0  # Number of iterations
         best_performing = 0  # Most enemies beaten by a single individual
         best_performing_array = []  # Most enemies beaten by a single individual over time
@@ -254,10 +255,11 @@ if __name__ == '__main__':
             # Update best performing
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
-                if iterations != 0:
-                    best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
-                else:
-                    best_performing_array.append(copy.deepcopy(most_beaten))
+
+            if most_beaten > max_enemies_beaten: # Substitute best performing
+                best_performing_array[-1] = copy.deepcopy(most_beaten) # Because this lacks one behind next update
+            elif iterations == 0: # Store initial value of population
+                best_performing_array.append(copy.deepcopy(most_beaten))
 
             # --- Print some settings
             print("NEW ITERATION: ", iterations)
