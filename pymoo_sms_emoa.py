@@ -40,24 +40,22 @@ if SMART_INIT:
     POP_SIZE = len(next_population)
 else:
     next_population = FloatRandomSampling()
-    POP_SIZE = 10
+    POP_SIZE = 100
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 
-# TODO: Set to 50_000 for final runs
 # TERMINATION CRITERIA
-term_critea = "n_gen"  # "n_gen" or "n_eval"
+term_critea = "n_eval"  # "n_gen" or "n_eval"
 if term_critea == "n_gen":
-    N_GENERATIONS = 5
+    N_GENERATIONS = 10
 elif term_critea == "n_eval":
-    N_EVALUATIONS = 100_000
+    N_EVALUATIONS = 50_000
 else:
     raise Exception("Invalid termination criteria")
 
 n_hidden_neurons = 10
 
 experiment_name = 'pymoo_sms_emoa'
-solution_file_name = 'pymoo_sms_emoa_best'
 
 initialise_script(experiment_name=experiment_name, clean_folder=False)
 
@@ -183,7 +181,6 @@ def main(env: Environment, n_genes: int, population=None):
             ind_objective_fitness = [1 / problem.last_iteration_objectives_fitness[objective][ind_id] for objective in
                                      problem.last_iteration_objectives_fitness.keys()]
             datastore_row = [algorithm.n_gen, algorithm.evaluator.n_eval, ind_id] + ind_fitness + ind_objective_fitness
-            print(len(datastore_row))
             datastore.append(datastore_row)
 
         # returned the evaluated individuals which have been evaluated or even modified
@@ -233,6 +230,6 @@ if __name__ == '__main__':
         'n_gens', 'n_evals', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
         'obj_hard', 'obj_medium', 'obj_easy'
     ])
-    df.to_csv(f"pymoo_sms_emoa_datastore_{uuid.uuid4()}.csv", index=False)
+    df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore_{uuid.uuid4()}.csv", index=False)
 
     print("Done!")
