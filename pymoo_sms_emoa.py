@@ -43,6 +43,7 @@ else:
     POP_SIZE = 100
 
 ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+N_REPEATS = 2
 
 # TERMINATION CRITERIA
 term_critea = "n_eval"  # "n_gen" or "n_eval"
@@ -221,15 +222,17 @@ def main(env: Environment, n_genes: int, population=None):
 
 
 if __name__ == '__main__':
-    print("Running pymoo_sms_emoa.py")
-    env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
-    env.update_parameter('multiplemode', 'no')
+    for repeat in range(N_REPEATS):
+        print("Running pymoo_sms_emoa.py; Repeat: ", repeat + 1)
+        env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
+        env.update_parameter('multiplemode', 'no')
 
-    datastore = main(env, n_genes, population=next_population)
-    df = pd.DataFrame(datastore, columns=[
-        'n_gens', 'n_evals', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
-        'obj_hard', 'obj_medium', 'obj_easy'
-    ])
-    df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore_{uuid.uuid4()}.csv", index=False)
+        datastore = main(env, n_genes, population=next_population)
+        df = pd.DataFrame(datastore, columns=[
+            'n_gens', 'n_evals', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
+            'obj_hard', 'obj_medium', 'obj_easy'
+        ])
+        df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore{repeat}_{uuid.uuid4()}.csv", index=False)
 
-    print("Done!")
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} ---- Done!")
+        print()
