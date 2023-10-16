@@ -18,7 +18,7 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     pure_fitness: if True, return the fitness as is, otherwise return the inverse of the fitness for minimization problem
     return_enemies: if True, return the player life, enemy life and time
     """
-    f, p, e, t = env.play(pcont=xm)
+    _, p, e, t = env.play(pcont=xm)
     # Standard fitness function
     f = (100 - e) + np.log(p + 0.001)
     # If other fitness function is provided, use it
