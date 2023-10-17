@@ -27,7 +27,7 @@ from pymoo.operators.mutation.gauss import GaussianMutation
 from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
-N_REPEATS = 1#10
+N_REPEATS = 1
 MAX_EVALUATIONS = 50_000
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
@@ -247,19 +247,24 @@ if __name__ == '__main__':
                         beaten2[enemy][-1] = beaten2[enemy][-1] / popsize_or * 100
                         beaten[enemy] = beaten[enemy] / popsize_or * 100
                 # Reset
-                if enemy_beaten >= most_beaten:
-                    most_beaten = enemy_beaten
+                if enemy_beaten > most_beaten:
+                    most_beaten = copy.deepcopy(enemy_beaten)
                     best_x = copy.deepcopy(x)
+                elif (enemy_beaten == most_beaten) and (most_beaten != 0):
+                    best_x = np.vstack((best_x, x))
 
             # Update best performing
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
-                if (enemy_beaten == most_beaten) and (enemy_beaten > 0):
-                    BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
+                if iterations == 0:
+                    BEST = copy.deepcopy(best_x)
+                elif (most_beaten == best_performing) and (enemy_beaten > 0):
+                    #BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
                     BEST = np.vstack((BEST, best_x))
-                    np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
+                    #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
                 else:
-                    np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
+                    BEST = copy.deepcopy(best_x)
+                    #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
 
             if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
@@ -325,8 +330,8 @@ if __name__ == '__main__':
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode)
             # Cache algorithm instance --> don't tab this one, should be saved in both instances!!!!!!!!!!!!!!!!!!!!!!!
-            algos = {algorithm_hash: algorithm}
-            # algos[algorithm_hash] = algorithm
+            #algos = {algorithm_hash: algorithm} # Watch out !!!!!
+            algos[algorithm_hash] = algorithm
 
             # Increase beaten3
             beaten3 += best_enemies
@@ -336,12 +341,12 @@ if __name__ == '__main__':
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
             if max_enemies_beaten > best_performing:
-                best_performing = max_enemies_beaten
-                np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
+                best_performing = copy.deepcopy(max_enemies_beaten)
+                BEST = copy.deepcopy(best_x) #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
             elif max_enemies_beaten == best_performing:
-                BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
+                #BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
                 BEST = np.vstack((BEST, best_x))
-                np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
+                #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
             # Append to best_performing
             # Append because of after ... evaluations after previous update
             best_performing_array.append(max_enemies_beaten)
@@ -356,5 +361,6 @@ if __name__ == '__main__':
             iterations += 1
         np.savetxt(f"{experiment_name}/FITNESS_trial_{trial + 1}_{trial_uuid}", FITNESS)
         np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial + 1}_{trial_uuid}", np.array(best_performing_array))
+        np.savetxt(f"{experiment_name}/BEST_{trial + 1}_{trial_uuid}", BEST)
         print(f"Total time (minutes cumulative): {(time.time() - time_start) / 60:.2f}")
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} ---- Done!\n")
