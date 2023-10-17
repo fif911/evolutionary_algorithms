@@ -326,6 +326,7 @@ if __name__ == '__main__':
                                                                                 crossovermode=crossovermode)
             # Cache algorithm instance --> don't tab this one, should be saved in both instances!!!!!!!!!!!!!!!!!!!!!!!
             algos = {algorithm_hash: algorithm}
+            # algos[algorithm_hash] = algorithm
 
             # Increase beaten3
             beaten3 += best_enemies
