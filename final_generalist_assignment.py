@@ -27,7 +27,7 @@ from pymoo.operators.mutation.gauss import GaussianMutation
 from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
-N_REPEATS = 10
+N_REPEATS = 1#10
 MAX_EVALUATIONS = 50_000
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
@@ -254,6 +254,12 @@ if __name__ == '__main__':
             # Update best performing
             if most_beaten >= best_performing:
                 best_performing = copy.deepcopy(most_beaten)
+                if (enemy_beaten == most_beaten) and (enemy_beaten > 0):
+                    BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
+                    BEST = np.vstack((BEST, best_x))
+                    np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
+                else:
+                    np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
 
             if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
@@ -330,8 +336,11 @@ if __name__ == '__main__':
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
             if max_enemies_beaten > best_performing:
                 best_performing = max_enemies_beaten
+                np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
             elif max_enemies_beaten == best_performing:
-                pass
+                BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
+                BEST = np.vstack((BEST, best_x))
+                np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
             # Append to best_performing
             # Append because of after ... evaluations after previous update
             best_performing_array.append(max_enemies_beaten)
