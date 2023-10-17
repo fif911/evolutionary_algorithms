@@ -56,7 +56,7 @@ else:
 
 n_hidden_neurons = 10
 
-experiment_name = 'pymoo_sms_emoa'
+experiment_name = 'pymoo_sms_emoa_without_enemy_8'
 
 initialise_script(experiment_name=experiment_name, clean_folder=False)
 
@@ -119,7 +119,7 @@ class objectives(Problem):
                                range(len(x))],
             "objective_medium": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [3, 4, 7]]) for ind_id in
                                  range(len(x))],
-            "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5, 8]]) for ind_id in
+            "objective_easy": [np.mean([dict_enemies[enemy_id][ind_id] for enemy_id in [2, 5]]) for ind_id in
                                range(len(x))],
         }
         self.last_iteration_evaluation_results = dict_enemies
