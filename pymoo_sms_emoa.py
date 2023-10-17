@@ -42,7 +42,7 @@ else:
     next_population = FloatRandomSampling()
     POP_SIZE = 100
 
-ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
+ENEMIES = [1, 2, 3, 4, 5, 6, 7]  # enemy 8 is dropped for the second experiment
 N_REPEATS = 2
 
 # TERMINATION CRITERIA
@@ -195,10 +195,11 @@ def main(env: Environment, n_genes: int, population=None):
         for ind_id, _ in enumerate(pop):
             ind_fitness = [1 / problem.last_iteration_evaluation_results[enemy][ind_id] for enemy in
                            problem.last_iteration_evaluation_results.keys()]
+            fitness_mean = np.mean(ind_fitness)
             ind_objective_fitness = [1 / problem.last_iteration_objectives_fitness[objective][ind_id] for objective in
                                      problem.last_iteration_objectives_fitness.keys()]
             datastore_row = [algorithm.n_gen, algorithm.evaluator.n_eval, problem.last_iteration_max_enemies_beaten,
-                             ind_id] + ind_fitness + ind_objective_fitness
+                             ind_id] + [fitness_mean] + ind_fitness + ind_objective_fitness
             datastore.append(datastore_row)
 
         # returned the evaluated individuals which have been evaluated or even modified
@@ -219,6 +220,7 @@ def main(env: Environment, n_genes: int, population=None):
     win_id = 0
     win_id_most_player_lives = 0
     for i, x in enumerate(res.X):
+        # verify solution on set of all 8 enemies and choose the best
         enemies_beaten, _, _, player_lifes, _ = verify_solution(env, x,
                                                                 enemies=[1, 2, 3, 4, 5,
                                                                          6, 7, 8],
@@ -260,8 +262,9 @@ if __name__ == '__main__':
         env.update_parameter('multiplemode', 'no')
 
         datastore = main(env, n_genes, population=next_population)
+        fitness_columns = [f"f{i + 1}" for i in range(len(ENEMIES))]
         df = pd.DataFrame(datastore, columns=[
-            'n_gens', 'n_evals', 'max_enemies_beaten', 'ind_id', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8',
+            'n_gens', 'n_evals', 'max_enemies_beaten', 'ind_id', 'f_mean', *fitness_columns,
             'obj_hard', 'obj_medium', 'obj_easy'
         ])
         df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore{repeat}_{uuid.uuid4()}.csv", index=False)
