@@ -11,6 +11,7 @@ Docs link: https://pymoo.org/algorithms/moo/sms.html
 import copy
 import time
 import uuid
+from typing import Optional
 
 import numpy as np
 from evoman.environment import Environment
@@ -55,6 +56,7 @@ Config.warnings['not_compiled'] = False
 class objectives(Problem):
     enemies: list[int]
     env: Environment
+    last_iteration_objectives_fitness: Optional[dict] = None
 
     def __init__(self, env: Environment, n_genes: int, enemies: list[int], n_objectives):
         self.env = env
@@ -97,17 +99,18 @@ class objectives(Problem):
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + 2}"] = dict_enemies[enemy]
 
+        self.last_iteration_objectives_fitness = objectives_fitness
         # Get the fitness for the whole population and all objectives
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
 def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcross=1, crossovermode="NN",
-         algorithm=None):
+         algorithm=None, current_iteration=None):
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=ALL_ENEMIES,
-        n_objectives=len(ENEMIES) + (len(CLUSTER) > 0)
+        n_objectives=len(ALL_ENEMIES)
     )
 
     # --- Set crossover mode
@@ -136,14 +139,21 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
 
     # --- Run te algorithm
     step = 0
+    algo_datastore = []  # list with: (n_iter, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
     while algorithm.has_next():
         print("\t\t", np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
-        if (step == 0) and (algo_label == True):  # If we are in the first step + we have an algorithm
+        if (step == 0) and (algo_label is True):  # If we are in the first step + we have an algorithm
             pop = Population(population)
         else:
             pop = algorithm.ask()
-
+        # Evaluate the individuals
         algorithm.evaluator.eval(problem, pop)
+        # Store the data
+        fvalues = np.array([val for val in problem.last_iteration_objectives_fitness.values()])
+        for ind_id in range(len(pop)):
+            algo_datastore.append(tuple([current_iteration, algorithm.n_gen, ind_id, 1 / fvalues[:, ind_id].mean()] + [1 / fval for fval in fvalues[:, ind_id]]))
+        
+        # Tell the algorithm the fitness of the individuals
         algorithm.tell(infills=pop)
         # Increase step
         step += 1
@@ -155,11 +165,10 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
     # Obtain the result objective from the algorithm
     res = algorithm.result()
 
-    # Obtain the best solutions in terms of enemies beaten
+    # Obtain the best solutions in terms of enemies beaten --> used for probabilities
     for i, x in enumerate(res.X):
         # Get enemy lives
-        enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
-                                                                          verbose=True,
+        enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8], verbose=True,
                                                                           print_results=False)
         enemy_lives = np.array(enemy_lives)
         # Get the number of enemies beaten
@@ -174,7 +183,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
     # Normalize
     best_enemies = best_enemies / len(best_x)
 
-    return [i.X for i in algorithm.ask()], best_x, max_enemies_beaten, best_enemies, algorithm
+    return [i.X for i in algorithm.ask()], best_x, max_enemies_beaten, best_enemies, algorithm, algo_datastore
 
 
 if __name__ == '__main__':
@@ -259,12 +268,9 @@ if __name__ == '__main__':
                 if iterations == 0:
                     BEST = copy.deepcopy(best_x)
                 elif (most_beaten == best_performing) and (enemy_beaten > 0):
-                    #BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
                     BEST = np.vstack((BEST, best_x))
-                    #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
                 else:
                     BEST = copy.deepcopy(best_x)
-                    #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
 
             if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
@@ -324,14 +330,14 @@ if __name__ == '__main__':
                 pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode,
-                                                                                algorithm=algos[algorithm_hash])
+                                                                                algorithm=algos[algorithm_hash],
+                                                                                current_iteration=iterations)
             else:
                 pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode)
             # Cache algorithm instance --> don't tab this one, should be saved in both instances!!!!!!!!!!!!!!!!!!!!!!!
-            algos = {algorithm_hash: algorithm} # Watch out !!!!!
-            #algos[algorithm_hash] = algorithm
+            algos = {algorithm_hash: algorithm}
 
             # Increase beaten3
             beaten3 += best_enemies
@@ -342,11 +348,9 @@ if __name__ == '__main__':
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
             if max_enemies_beaten > best_performing:
                 best_performing = copy.deepcopy(max_enemies_beaten)
-                BEST = copy.deepcopy(best_x) #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", best_x)
+                BEST = copy.deepcopy(best_x)
             elif max_enemies_beaten == best_performing:
-                #BEST = np.loadtxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}")
                 BEST = np.vstack((BEST, best_x))
-                #np.savetxt(f"{experiment_name}/Bestx_{trial + 1}_{trial_uuid}", BEST)
             # Append to best_performing
             # Append because of after ... evaluations after previous update
             best_performing_array.append(max_enemies_beaten)
