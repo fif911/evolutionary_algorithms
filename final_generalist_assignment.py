@@ -218,14 +218,14 @@ if __name__ == '__main__':
         assert nhistory % 2 == 0, "nhistory must be even"
         # Initialize Constrained Led Approach
         iterations = 0  # Number of iterations
-        max_enemies_beaten = 0  # Maximum number of enemies beaten in current population
-        best_performing = 0  # Most enemies beaten by a single individual ever
+        population_max_enemies_beaten = 0  # Maximum number of enemies beaten in current population
+        current_record_max_enemies_beaten = 0  # Most enemies beaten by a single individual ever
         best_performing_array = []  # Most enemies beaten by a single individual in current population over time
         BEST_x = ""  # Best individual --> list later on
         algos = {}  # Cache algorithms
 
         # data store format:
-        # (n_iter, max_enemies_beaten, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
+        # (n_iter, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
         trial_datastore = []  # Data store in format
 
         # Number of enemies beaten in current population
@@ -248,7 +248,7 @@ if __name__ == '__main__':
             most_beaten, most_x = 0, ""
             for i_x, x in enumerate(POP):
                 # Set to zero for each member
-                enemy_beaten = 0
+                n_enemies_beaten_by_ind = 0
                 for enemy in range(1, 9):
                     # Simulate
                     env.update_parameter('enemies', [enemy])
@@ -257,34 +257,34 @@ if __name__ == '__main__':
                     if (e == 0) and (p > 0):
                         beaten[enemy] += 1
                         beaten2[enemy][-1] += 1
-                        enemy_beaten += 1
+                        n_enemies_beaten_by_ind += 1
                     if i_x == (len(POP) - 1):  # Last one --> Normalize
                         beaten2[enemy][-1] = beaten2[enemy][-1] / popsize_or * 100
                         beaten[enemy] = beaten[enemy] / popsize_or * 100
                 # Reset
-                if enemy_beaten > most_beaten:
-                    most_beaten = copy.deepcopy(enemy_beaten)
+                if n_enemies_beaten_by_ind > most_beaten:
+                    most_beaten = copy.deepcopy(n_enemies_beaten_by_ind)
                     best_x = copy.deepcopy(x)
-                elif (enemy_beaten == most_beaten):
+                elif (n_enemies_beaten_by_ind == most_beaten):
                     if (most_beaten != 0) or (i_x != 0): # if best_x exists
                         best_x = np.vstack((best_x, x))
                     else: # best_x does not exist yet
                         best_x = copy.deepcopy(x)
 
             # ---- Update best performing
-            if most_beaten >= best_performing:
+            if most_beaten >= current_record_max_enemies_beaten:
                 if iterations == 0: # BEST does not exist yet
                     BEST = copy.deepcopy(best_x)
-                elif (most_beaten == best_performing):
+                elif (most_beaten == current_record_max_enemies_beaten):
                     BEST = np.vstack((BEST, best_x))
                 else: # New Best
                     BEST = copy.deepcopy(best_x)
                 # Update
-                best_performing = copy.deepcopy(most_beaten)
+                current_record_max_enemies_beaten = copy.deepcopy(most_beaten)
 
             if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
-            elif most_beaten > max_enemies_beaten:  # Substitute best performing
+            elif most_beaten > population_max_enemies_beaten:  # Substitute best performing
                 best_performing_array[-1] = copy.deepcopy(most_beaten)  # Because this lacks one behind next update
 
             # --- Print some settings
@@ -292,7 +292,7 @@ if __name__ == '__main__':
             print("Population Size: ", POP_SIZE)
             print("Mutation Probability: ", pmut)
             print("Crossover Type: ", crossovermode)
-            print("\tCurrent Record: ", best_performing)
+            print("\tCurrent Record: ", current_record_max_enemies_beaten)
             print("\tBeaten Percentages Current Population [%] and STD over " + str(nhistory) + " Runs [%]")
             for enemy in range(1, 9):
                 print("\t\tEnemy: ", enemy)
@@ -337,7 +337,7 @@ if __name__ == '__main__':
 
             # Check if algorithm was already initialised and run
             if algorithm_hash in algos.keys():
-                pop, best_x, max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(
+                pop, best_x, population_max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(
                     env, n_genes,
                     population=pop,
                     pmut=pmut,
@@ -348,7 +348,7 @@ if __name__ == '__main__':
                         algorithm_hash],
                     current_iteration=iterations)
             else:
-                pop, best_x, max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(
+                pop, best_x, population_max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(
                     env, n_genes,
                     population=pop,
                     pmut=pmut,
@@ -365,14 +365,14 @@ if __name__ == '__main__':
             # Check for best performing in Pareto front --> before we saved these x-values, but now we don't because of speed considerations
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
-            if max_enemies_beaten > best_performing: # New best
-                best_performing = copy.deepcopy(max_enemies_beaten)
+            if population_max_enemies_beaten > current_record_max_enemies_beaten: # New best
+                current_record_max_enemies_beaten = copy.deepcopy(population_max_enemies_beaten)
                 BEST = copy.deepcopy(best_x)
-            elif max_enemies_beaten == best_performing: # Equal best
+            elif population_max_enemies_beaten == current_record_max_enemies_beaten: # Equal best
                 BEST = np.vstack((BEST, best_x))
             # Append to best_performing
             # Append because of after ... evaluations after previous update
-            best_performing_array.append(max_enemies_beaten)
+            best_performing_array.append(population_max_enemies_beaten)
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
