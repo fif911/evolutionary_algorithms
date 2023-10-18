@@ -28,7 +28,7 @@ from pymoo.operators.mutation.gauss import GaussianMutation
 from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
-N_REPEATS = 1
+N_REPEATS = 2
 MAX_EVALUATIONS = 50_000
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
