@@ -255,18 +255,22 @@ if __name__ == '__main__':
                 if enemy_beaten > most_beaten:
                     most_beaten = copy.deepcopy(enemy_beaten)
                     best_x = copy.deepcopy(x)
-                elif (enemy_beaten == most_beaten) and (most_beaten != 0):
-                    best_x = np.vstack((best_x, x))
+                elif (enemy_beaten == most_beaten):
+                    if (most_beaten != 0) or (i_x != 0): # if best_x exists
+                        best_x = np.vstack((best_x, x))
+                    else: # best_x does not exist yet
+                        best_x = copy.deepcopy(x)
 
-            # Update best performing
+            # ---- Update best performing
             if most_beaten >= best_performing:
-                best_performing = copy.deepcopy(most_beaten)
-                if iterations == 0:
+                if iterations == 0: # BEST does not exist yet
                     BEST = copy.deepcopy(best_x)
-                elif (most_beaten == best_performing) and (enemy_beaten > 0):
+                elif (most_beaten == best_performing):
                     BEST = np.vstack((BEST, best_x))
-                else:
+                else: # New Best
                     BEST = copy.deepcopy(best_x)
+                # Update
+                best_performing = copy.deepcopy(most_beaten)
 
             if iterations == 0:  # Store initial value of population
                 best_performing_array.append(copy.deepcopy(most_beaten))
