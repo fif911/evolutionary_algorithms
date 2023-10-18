@@ -365,10 +365,10 @@ if __name__ == '__main__':
             # Check for best performing in Pareto front --> before we saved these x-values, but now we don't because of speed considerations
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
-            if max_enemies_beaten > best_performing:
+            if max_enemies_beaten > best_performing: # New best
                 best_performing = copy.deepcopy(max_enemies_beaten)
                 BEST = copy.deepcopy(best_x)
-            elif max_enemies_beaten == best_performing:
+            elif max_enemies_beaten == best_performing: # Equal best
                 BEST = np.vstack((BEST, best_x))
             # Append to best_performing
             # Append because of after ... evaluations after previous update
