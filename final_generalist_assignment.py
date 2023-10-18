@@ -151,8 +151,8 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
         # Store the data
         fvalues = np.array([val for val in problem.last_iteration_objectives_fitness.values()])
         for ind_id in range(len(pop)):
-            algo_datastore.append(tuple([current_iteration, algorithm.n_gen, ind_id, 1 / fvalues[:, ind_id].mean()] + [1 / fval for fval in fvalues[:, ind_id]]))
-        
+            algo_datastore.append(tuple([current_iteration, algorithm.n_gen, ind_id, (1 / fvalues[:, ind_id]).mean()] + [1 / fval for fval in fvalues[:, ind_id]]))
+        print(algo_datastore)
         # Tell the algorithm the fitness of the individuals
         algorithm.tell(infills=pop)
         # Increase step
@@ -214,8 +214,7 @@ if __name__ == '__main__':
         best_performing = 0  # Most enemies beaten by a single individual
         best_performing_array = []  # Most enemies beaten by a single individual over time
         BEST_x = ""  # Best individual
-
-        FITNESS = np.zeros((int(8 * WHOLE_POP_SIZE), int(MAX_EVALUATIONS / (POP_SIZE * N_GENERATIONS) + 1)))  # fITNESS
+        objective_fitness = []
 
         algos = {}  # Cache algorithms
         # Number of enemies beaten in current population
@@ -243,10 +242,6 @@ if __name__ == '__main__':
                     # Simulate
                     env.update_parameter('enemies', [enemy])
                     p, e, t = simulation(env, x, verbose=True)
-                    # Get fitness
-                    f = (100 - e) + np.log(p + 0.001)
-                    # Store fitness
-                    FITNESS[int(i_x + (enemy - 1) * WHOLE_POP_SIZE), iterations] = f
                     # Update beaten
                     if (e == 0) and (p > 0):
                         beaten[enemy] += 1
@@ -327,16 +322,16 @@ if __name__ == '__main__':
 
             # Check if algorithm was already initialised and run
             if algorithm_hash in algos.keys():
-                pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
+                pop, best_x, max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode,
                                                                                 algorithm=algos[algorithm_hash],
                                                                                 current_iteration=iterations)
             else:
-                pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
+                pop, best_x, max_enemies_beaten, best_enemies, algorithm, algo_datastore = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode)
-            # Cache algorithm instance --> don't tab this one, should be saved in both instances!!!!!!!!!!!!!!!!!!!!!!!
+            # Cache algorithm instance
             algos = {algorithm_hash: algorithm}
 
             # Increase beaten3
@@ -357,13 +352,14 @@ if __name__ == '__main__':
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
+            objective_fitness += algo_datastore
             POP += copy.deepcopy(pop)  # append new population to the whole
             EVALUATIONS += N_GENERATIONS * POP_SIZE  # calculate total amount of evaluations so far
             print("\tEvaluations: ", EVALUATIONS)
             print("----------------------------------------------------------------------------------")
             # Increase iterations
             iterations += 1
-        np.savetxt(f"{experiment_name}/FITNESS_trial_{trial + 1}_{trial_uuid}", FITNESS)
+        #np.savetxt(f"{experiment_name}/FITNESS_trial_{trial + 1}_{trial_uuid}", .....)
         np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial + 1}_{trial_uuid}", np.array(best_performing_array))
         np.savetxt(f"{experiment_name}/BEST_{trial + 1}_{trial_uuid}", BEST)
         print(f"Total time (minutes cumulative): {(time.time() - time_start) / 60:.2f}")
