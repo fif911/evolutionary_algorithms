@@ -190,9 +190,11 @@ if __name__ == '__main__':
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} Staring script\n")
     time_start = time.time()
     for trial in range(0, N_REPEATS):
+        # --------------------------- Overall Initialization
         print(f"Staring repeat {trial + 1}/{N_REPEATS}")
+        # Create unique identifier for the trial
         trial_uuid = uuid.uuid4()
-        # Initialize
+        # Number of evaluations and enemies
         EVALUATIONS, ENEMIES = 0, np.array([1])
         # Environment
         env, n_genes = init_env(experiment_name, [1], n_hidden_neurons)
@@ -205,25 +207,24 @@ if __name__ == '__main__':
         pop = np.random.uniform(-1, 1, size=(WHOLE_POP_SIZE, 265))
         # Save population and population size
         POP, popsize_or = copy.deepcopy(pop), copy.deepcopy(len(pop))
-
         # --------------------------- Iterated Learning/Constrained Led Approach
         assert nhistory % 2 == 0, "nhistory must be even"
-        # Initialize
-        max_enemies_beaten = 0
+        # Initialize Constrained Led Approach
         iterations = 0  # Number of iterations
-        best_performing = 0  # Most enemies beaten by a single individual
-        best_performing_array = []  # Most enemies beaten by a single individual over time
-        BEST_x = ""  # Best individual
-        objective_fitness = []
-
+        max_enemies_beaten = 0 # Maximum number of enemies beaten in current population
+        best_performing = 0  # Most enemies beaten by a single individual ever
+        best_performing_array = []  # Most enemies beaten by a single individual in current population over time
+        BEST_x = ""  # Best individual --> list later on
+        objective_fitness = [] # Fitness values
         algos = {}  # Cache algorithms
+
         # Number of enemies beaten in current population
         beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
         # Number of enemies beaten in current population over time nhistory
         beaten2 = {1: nhistory * [0], 2: nhistory * [0], 3: nhistory * [0], 4: nhistory * [0], 5: nhistory * [0],
                    6: nhistory * [0], 7: nhistory * [0],
                    8: nhistory * [0]}
-        # Average number of enemies beaten in current Pareto front for the most generalizable enemies
+        # Sum of average number of enemies beaten in current Pareto front for the most generalizable enemies
         beaten3 = np.zeros(8)
 
         while EVALUATIONS < MAX_EVALUATIONS:
