@@ -132,7 +132,7 @@ class objectives(Problem):
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
-def plot_pareto_fronts(res, best_solutions_idx: list[int], save_plots_to_file=True):
+def plot_pareto_fronts(res, best_solutions_idx: list[int], save_plots_to_file=True, repeat_uuid=uuid.uuid4()):
     """Plot the pareto fronts for each pair of objectives and all 3 objectives"""
     print(f"Plotting {res.F.shape[0]} solutions")
     res.F = 1 / res.F
@@ -160,15 +160,14 @@ def plot_pareto_fronts(res, best_solutions_idx: list[int], save_plots_to_file=Tr
     file_names_and_plots = [("plot_3d", plot_3d), ("plot_hard_medium", plot_hard_medium),
                             ("plot_hard_easy", plot_hard_easy),
                             ("plot_medium_easy", plot_medium_easy)]
-    run_uuid = uuid.uuid4()
     for plot_name, plot in file_names_and_plots:
         if save_plots_to_file:
-            plot.save(f"{experiment_name}/pareto_fronts_{plot_name}_{run_uuid}.png", dpi=300)
+            plot.save(f"{experiment_name}/pareto_fronts_{plot_name}_{repeat_uuid}.png", dpi=300)
         else:
             plot.show()
 
 
-def main(env: Environment, n_genes: int, population=None):
+def main(env: Environment, n_genes: int, population=None, repeat_uuid=uuid.uuid4()):
     start_time = time.time()
     problem = objectives(
         env=env,
@@ -249,25 +248,26 @@ def main(env: Environment, n_genes: int, population=None):
     #     np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{i}_{uuid.uuid4()}.txt', solution)
 
     # save the best of the best solution
-    np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{uuid.uuid4()}.txt', res.X[win_id])
+    np.savetxt(f'{experiment_name}/enemies_beaten_{max_enemies_beaten}_{repeat_uuid}.txt', res.X[win_id])
 
-    plot_pareto_fronts(res, best_solutions_idx)
+    plot_pareto_fronts(res, best_solutions_idx, repeat_uuid=repeat_uuid)
     return datastore
 
 
 if __name__ == '__main__':
     for repeat in range(N_REPEATS):
+        repeat_uuid = uuid.uuid4()
         print("Running pymoo_sms_emoa.py; Repeat: ", repeat + 1)
         env, n_genes = init_env(experiment_name, ENEMIES, n_hidden_neurons)
         env.update_parameter('multiplemode', 'no')
 
-        datastore = main(env, n_genes, population=next_population)
+        datastore = main(env, n_genes, population=next_population, repeat_uuid=repeat_uuid)
         fitness_columns = [f"f{i + 1}" for i in range(len(ENEMIES))]
         df = pd.DataFrame(datastore, columns=[
             'n_gens', 'n_evals', 'max_enemies_beaten', 'ind_id', 'f_mean', *fitness_columns,
             'obj_hard', 'obj_medium', 'obj_easy'
         ])
-        df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore{repeat}_{uuid.uuid4()}.csv", index=False)
+        df.to_csv(f"{experiment_name}/pymoo_sms_emoa_datastore{repeat}_{repeat_uuid}.csv", index=False)
 
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} ---- Done!")
         print()
