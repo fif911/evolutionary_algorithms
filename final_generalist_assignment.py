@@ -11,6 +11,7 @@ Docs link: https://pymoo.org/algorithms/moo/sms.html
 import copy
 import time
 import uuid
+from typing import Optional
 
 import numpy as np
 from evoman.environment import Environment
@@ -55,6 +56,7 @@ Config.warnings['not_compiled'] = False
 class objectives(Problem):
     enemies: list[int]
     env: Environment
+    last_iteration_objectives_fitness: Optional[dict] = None
 
     def __init__(self, env: Environment, n_genes: int, enemies: list[int], n_objectives):
         self.env = env
@@ -97,17 +99,18 @@ class objectives(Problem):
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + 2}"] = dict_enemies[enemy]
 
+        self.last_iteration_objectives_fitness = objectives_fitness
         # Get the fitness for the whole population and all objectives
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
 
 def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcross=1, crossovermode="NN",
-         algorithm=None):
+         algorithm=None, current_iteration=None):
     problem = objectives(
         env=env,
         n_genes=n_genes,
         enemies=ALL_ENEMIES,
-        n_objectives=len(ENEMIES) + (len(CLUSTER) > 0)
+        n_objectives=len(ALL_ENEMIES)
     )
 
     # --- Set crossover mode
@@ -136,9 +139,10 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
 
     # --- Run te algorithm
     step = 0
+    algo_datastore = []  # list with: (n_iter, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
     while algorithm.has_next():
         print("\t\t", np.round((step / N_GENERATIONS * 100), 0), "%", end="\r")
-        if (step == 0) and (algo_label == True):  # If we are in the first step + we have an algorithm
+        if (step == 0) and (algo_label is True):  # If we are in the first step + we have an algorithm
             pop = Population(population)
         else:
             pop = algorithm.ask()
@@ -321,11 +325,13 @@ if __name__ == '__main__':
                 pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
                                                                                 crossovermode=crossovermode,
-                                                                                algorithm=algos[algorithm_hash])
+                                                                                algorithm=algos[algorithm_hash],
+                                                                                current_iteration=iterations)
             else:
                 pop, best_x, max_enemies_beaten, best_enemies, algorithm = main(env, n_genes, population=pop, pmut=pmut,
                                                                                 vsigma=vsigma, pcross=pcross,
-                                                                                crossovermode=crossovermode)
+                                                                                crossovermode=crossovermode,
+                                                                                current_iteration=iterations)
             # Cache algorithm only last algorithm instance
             algos = {algorithm_hash: algorithm}
 
