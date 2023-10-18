@@ -30,8 +30,7 @@ def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=
     if verbose:
         return p, e, t
 
-    if f <= 0:
-        f = 0.00001
+    f = max(f, 0.00001)  # avoid division by zero
 
     return 1 / f
 
