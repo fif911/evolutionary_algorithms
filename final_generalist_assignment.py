@@ -33,6 +33,7 @@ MAX_EVALUATIONS = 50_000
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
 WHOLE_POP_SIZE = 100  # whole population
+enemies_list = [1, 2, 3, 4, 5, 6, 7, 8]
 
 pmut, vsigma, pcross = 1, 1, 1  # Mutation probability, mutation strength, crossover probability
 crossovermode = "NN"  # NN or SBX
@@ -317,7 +318,7 @@ if __name__ == '__main__':
             # Choose 3 enemies with inverse probabilities.
             # Enemies on which the population performs poorly will be chosen with higher probability
             n_enemies = np.random.choice([min_n_enemies, max_n_enemies])
-            opponents = np.random.choice(np.arange(1, 9), p=probs, size=n_enemies, replace=False)
+            opponents = np.random.choice(enemies_list, p=probs, size=n_enemies, replace=False)
             CLUSTER = [[opponents[0]]]
             ENEMIES = np.array([opponents[i] for i in range(1, n_enemies)])
 
@@ -359,7 +360,7 @@ if __name__ == '__main__':
 
             # Increase beaten3
             beaten3 += best_enemies
-            print(beaten3)
+            print("Beat Rates of Most Generalizable Enemies: ", beaten3)
 
             # Check for best performing in Pareto front --> before we saved these x-values, but now we don't because of speed considerations
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
