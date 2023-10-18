@@ -334,6 +334,16 @@ if __name__ == '__main__':
             print(f"\t\tEnemy 1: {CLUSTER}")
             print(f"\t\tEnemy 2,3: {ENEMIES}")
 
+            # Get 0
+            if iterations == 0:
+                for i_x, x in enumerate(pop):
+                    fs = []
+                    for enemy in ALL_ENEMIES:
+                        env.update_parameter('enemies', [enemy])
+                        p, e, t = simulation(env, x, verbose=True)
+                        fs.append((100 - e) + np.log(p + 0.001))
+                    trial_datastore.append([0, 0, i_x, np.mean(fs)] + [f for f in fs])
+
             # Create unique identifier for the algorithm instance
             ALL_ENEMIES.sort()  # sort for hashing reproducibility
             algorithm_hash = "-".join([str(i) for i in ALL_ENEMIES])
