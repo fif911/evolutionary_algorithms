@@ -100,7 +100,9 @@ class objectives(Problem):
         for ienemy, enemy in enumerate(ENEMIES):
             objectives_fitness[f"objective_{ienemy + 2}"] = dict_enemies[enemy]
 
+        # Store the fitness for the last iteration
         self.last_iteration_objectives_fitness = objectives_fitness
+        
         # Get the fitness for the whole population and all objectives
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
@@ -133,7 +135,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
             # Create algorithm
             algorithm = SMSEMOA(pop_size=POP_SIZE, sampling=population, crossover=crossover,
                                 mutation=GaussianMutation(prob=pmut, sigma=vsigma))  # , seed=1
-            algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
+        algorithm.setup(problem, termination=('n_gen', N_GENERATIONS), verbose=False)
         algo_label = False
     else:
         algo_label = True
@@ -177,6 +179,7 @@ def main(env: Environment, n_genes: int, population=None, pmut=1, vsigma=1, pcro
         enemies_beaten, enemies_not_beaten, enemy_lives = verify_solution(env, x, enemies=[1, 2, 3, 4, 5, 6, 7, 8],
                                                                           verbose=True,
                                                                           print_results=False)
+        # Convert enemy lives to array
         enemy_lives = np.array(enemy_lives)
         # Get the number of enemies beaten
         if len(enemies_beaten) > max_enemies_beaten:  # New record
