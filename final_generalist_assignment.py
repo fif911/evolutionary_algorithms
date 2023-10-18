@@ -14,6 +14,7 @@ import uuid
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 from evoman.environment import Environment
 from scipy.spatial.distance import pdist
 
@@ -29,7 +30,7 @@ from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
 N_REPEATS = 2
-MAX_EVALUATIONS = 50_000
+MAX_EVALUATIONS = 50_000 + 200  # increase by 200 iterations more because we do not log the last iteration
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
 WHOLE_POP_SIZE = 100  # whole population
@@ -102,7 +103,7 @@ class objectives(Problem):
 
         # Store the fitness for the last iteration
         self.last_iteration_objectives_fitness = objectives_fitness
-        
+
         # Get the fitness for the whole population and all objectives
         out["F"] = anp.column_stack([objectives_fitness[key] for key in objectives_fitness.keys()])
 
@@ -214,7 +215,7 @@ if __name__ == '__main__':
         print("----------------------------------------------------------------------------------")
         # --------------------------- Initialize population
         # Sample random initial population
-        pop = np.random.uniform(-1, 1, size=(WHOLE_POP_SIZE, 265))
+        pop = np.random.uniform(-1, 1, size=(WHOLE_POP_SIZE, n_genes))
         # Save population and population size
         POP, popsize_or = copy.deepcopy(pop), copy.deepcopy(len(pop))
         # --------------------------- Iterated Learning/Constrained Led Approach
@@ -223,6 +224,7 @@ if __name__ == '__main__':
         iterations = 0  # Number of iterations
         population_max_enemies_beaten = 0  # Maximum number of enemies beaten in current population
         current_record_max_enemies_beaten = 0  # Most enemies beaten by a single individual ever
+        # format: (n_iters, n_evals, max_enemies_beaten)
         best_performing_array = []  # Most enemies beaten by a single individual in current population over time
         BEST_x = ""  # Best individual --> list later on
         algos = {}  # Cache algorithms
@@ -230,6 +232,8 @@ if __name__ == '__main__':
         # data store format:
         # (n_iter, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
         trial_datastore = []  # Data store in format
+        # (n_iter, n_evals, ind_id, mean_fitness, f1,f2, f3, f4, f5, f6, f7, f8)
+        trial_datastore_secondary = []  # Data store in format
 
         # Number of enemies beaten in current population
         beaten = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
@@ -252,10 +256,14 @@ if __name__ == '__main__':
             for i_x, x in enumerate(POP):
                 # Set to zero for each member
                 n_enemies_beaten_by_ind = 0
+                f_per_enemy = []
                 for enemy in range(1, 9):
                     # Simulate
                     env.update_parameter('enemies', [enemy])
                     p, e, t = simulation(env, x, verbose=True)
+                    f = (100 - e) + np.log(p + 0.001)
+                    f = max(f, 0.00001)
+                    f_per_enemy.append(f)
                     # Update beaten
                     if (e == 0) and (p > 0):
                         beaten[enemy] += 1
@@ -269,29 +277,34 @@ if __name__ == '__main__':
                     most_beaten = copy.deepcopy(n_enemies_beaten_by_ind)
                     best_x = copy.deepcopy(x)
                 elif (n_enemies_beaten_by_ind == most_beaten):
-                    if (most_beaten != 0) or (i_x != 0): # if best_x exists
+                    if (most_beaten != 0) or (i_x != 0):  # if best_x exists
                         best_x = np.vstack((best_x, x))
-                    else: # best_x does not exist yet
+                    else:  # best_x does not exist yet
                         best_x = copy.deepcopy(x)
+
+                # Add fitness to datastore
+                trial_datastore_secondary.append([iterations, EVALUATIONS, i_x, np.mean(f_per_enemy)] + f_per_enemy)
 
             # ---- Update best performing
             if most_beaten >= current_record_max_enemies_beaten:
-                if iterations == 0: # BEST does not exist yet
+                if iterations == 0:  # BEST does not exist yet
                     BEST = copy.deepcopy(best_x)
                 elif (most_beaten == current_record_max_enemies_beaten):
                     BEST = np.vstack((BEST, best_x))
-                else: # New Best
+                else:  # New Best
                     BEST = copy.deepcopy(best_x)
                 # Update
                 current_record_max_enemies_beaten = copy.deepcopy(most_beaten)
 
             if iterations == 0:  # Store initial value of population
-                best_performing_array.append(copy.deepcopy(most_beaten))
+                entry = (iterations, EVALUATIONS, most_beaten)
+                best_performing_array.append(entry)
             elif most_beaten > population_max_enemies_beaten:  # Substitute best performing
-                best_performing_array[-1] = copy.deepcopy(most_beaten)  # Because this lacks one behind next update
+                entry = (iterations, EVALUATIONS, most_beaten)
+                best_performing_array[-1] = entry  # Because this lacks one behind next update
 
             # --- Print some settings
-            print(f"Iteration: {iterations}; Evaluations: {EVALUATIONS}")
+            print(f"Iteration: {iterations}; Evaluation: {EVALUATIONS}")
             print("Population Size: ", POP_SIZE)
             print("Mutation Probability: ", pmut)
             print("Crossover Type: ", crossovermode)
@@ -310,9 +323,9 @@ if __name__ == '__main__':
             print("\tOld Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
 
             # Set enemies according to probabilities
-            beaten_vals = beaten3
+            beaten_vals = beaten3[0:len(enemies_list)]  # TODO: verify this bit when we run for 7 enemies
             if sum(beaten_vals) == 0:
-                probs = np.ones(8) / 8
+                probs = np.ones(len(enemies_list)) / len(enemies_list)
             else:
                 min_val = np.min(np.where(beaten_vals == 0, 999, beaten_vals))
                 probs = sum(beaten_vals) / np.where(beaten_vals == 0, min_val, beaten_vals)
@@ -340,8 +353,8 @@ if __name__ == '__main__':
                     fs = []
                     for enemy in ALL_ENEMIES:
                         env.update_parameter('enemies', [enemy])
-                        p, e, t = simulation(env, x, verbose=True)
-                        fs.append((100 - e) + np.log(p + 0.001))
+                        f = simulation(env, x, inverted_fitness=False)
+                        fs.append(max(f, 0.00001))
                     trial_datastore.append([0, 0, i_x, np.mean(fs)] + [f for f in fs])
 
             # Create unique identifier for the algorithm instance
@@ -367,7 +380,8 @@ if __name__ == '__main__':
                     pmut=pmut,
                     vsigma=vsigma,
                     pcross=pcross,
-                    crossovermode=crossovermode)
+                    crossovermode=crossovermode,
+                    current_iteration=iterations)
             # Cache algorithm instance
             algos = {algorithm_hash: algorithm}
 
@@ -378,29 +392,72 @@ if __name__ == '__main__':
             # Check for best performing in Pareto front --> before we saved these x-values, but now we don't because of speed considerations
             # We use an archived based approach, so this is allowed. However, it also means that these solution might not end up in our plots
             # , so the might differ because we have some spacing (Ngeneration * Popsize) between storage of fitness. But we cannot store all fitness values
-            if population_max_enemies_beaten > current_record_max_enemies_beaten: # New best
+            if population_max_enemies_beaten > current_record_max_enemies_beaten:  # New best
                 current_record_max_enemies_beaten = copy.deepcopy(population_max_enemies_beaten)
                 BEST = copy.deepcopy(best_x)
-            elif population_max_enemies_beaten == current_record_max_enemies_beaten: # Equal best
+            elif population_max_enemies_beaten == current_record_max_enemies_beaten:  # Equal best
                 BEST = np.vstack((BEST, best_x))
             # Append to best_performing
             # Append because of after ... evaluations after previous update
-            best_performing_array.append(population_max_enemies_beaten)
+            best_performing_array.append((iterations, EVALUATIONS, population_max_enemies_beaten))
 
             print("\tNew Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
             # Save population
-            trial_datastore.append(algo_datastore)
+            trial_datastore.extend(algo_datastore)
             POP += copy.deepcopy(pop)  # append new population to the whole
             EVALUATIONS += N_GENERATIONS * POP_SIZE  # calculate total amount of evaluations so far
-            print("\tEvaluations: ", EVALUATIONS)
+            print(f"\tEvaluations: {EVALUATIONS}/{MAX_EVALUATIONS}")
             print("----------------------------------------------------------------------------------")
             # Increase iterations
             iterations += 1
 
-        # TODO: convert trial datastore to pd dataframe and save to CSV
-
-        # np.savetxt(f"{experiment_name}/FITNESS_trial_{trial + 1}_{trial_uuid}", .....)
-        np.savetxt(f"{experiment_name}/max_enemies_beaten_{trial + 1}_{trial_uuid}", np.array(best_performing_array))
-        np.savetxt(f"{experiment_name}/BEST_{trial + 1}_{trial_uuid}", BEST)
+        # (n_iter, n_gens, ind_id, mean_obj, obj_1, obj_2, obj_3)
+        df = pd.DataFrame(
+            trial_datastore,
+            columns=("n_iter", "n_gens", "ind_id", "mean_obj", "obj_1", "obj_2", "obj_3")
+        )
+        df.to_csv(
+            f"{experiment_name}/dynamic_objectives_{current_record_max_enemies_beaten}_{trial_uuid}.csv",
+            index=False
+        )
+        # ("n_iter", "n_evals", "ind_id", "mean_fitness", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8")
+        # TODO: remove f8 when we run for 7 enemies
+        df = pd.DataFrame(
+            trial_datastore_secondary,
+            columns=("n_iter", "n_evals", "ind_id", "mean_fitness", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8")
+        )
+        df.to_csv(
+            f"{experiment_name}/dynamic_objectives_secondary_{current_record_max_enemies_beaten}_{trial_uuid}.csv",
+            index=False
+        )
+        df = pd.DataFrame(
+            best_performing_array,
+            columns=("n_iter", "n_evals", "max_enemies_beaten")
+        )
+        df.to_csv(
+            f"{experiment_name}/max_enemies_beaten_{current_record_max_enemies_beaten}_{trial_uuid}.csv",
+            index=False
+        )
+        del df  # free memory
+        # find the best solution in the BEST. If there are multiple solutions with the same number of enemies beaten,
+        # the one with the highest player life is chosen
+        most_enemies_beaten = 0
+        most_player_live = 0
+        win_id = 0
+        for idx, solution in enumerate(BEST):
+            enemies_beaten, _, _, player_lives, _ = verify_solution(env, best_solution=solution, vv=True,
+                                                                    print_results=False)
+            if len(enemies_beaten) > most_enemies_beaten:
+                most_enemies_beaten = len(enemies_beaten)
+                most_player_live = np.sum(player_lives)
+                win_id = idx
+            elif len(enemies_beaten) == most_enemies_beaten:
+                # check if the player life is higher
+                if np.sum(player_lives) > most_player_live:
+                    most_player_live = np.sum(player_lives)
+                    win_id = idx
+        the_best_of_the_best_genotype = BEST[win_id]
+        np.savetxt(f"{experiment_name}/best_solutions_{current_record_max_enemies_beaten}_{trial_uuid}.txt",
+                   the_best_of_the_best_genotype)
         print(f"Total time (minutes cumulative): {(time.time() - time_start) / 60:.2f}")
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} ---- Done!\n")
