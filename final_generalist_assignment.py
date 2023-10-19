@@ -29,12 +29,12 @@ from pymoo.operators.mutation.gauss import GaussianMutation
 from utils import simulation, verify_solution, init_env, initialise_script
 
 # Settings
-N_REPEATS = 2
+N_REPEATS = 1
 MAX_EVALUATIONS = 50_000 + 200  # increase by 200 iterations more because we do not log the last iteration
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
 WHOLE_POP_SIZE = 100  # whole population
-enemies_list = [1, 2, 3, 4, 5, 6, 7, 8]
+enemies_list = [1, 2, 3, 4, 5, 6, 7]
 
 pmut, vsigma, pcross = 1, 1, 1  # Mutation probability, mutation strength, crossover probability
 crossovermode = "NN"  # NN or SBX
@@ -50,7 +50,7 @@ global ENEMIES
 global CLUSTER
 
 # Create experiment folder
-experiment_name = 'final_generalist_assignment'
+experiment_name = 'final_generalist_assignment1-7'
 initialise_script(experiment_name=experiment_name, clean_folder=False)
 Config.warnings['not_compiled'] = False
 
