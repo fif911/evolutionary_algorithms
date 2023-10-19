@@ -13,7 +13,7 @@ ENEMIES = [1, 2, 3, 4, 5, 6, 7, 8]
 if __name__ == '__main__':
     start_time = time.time()
     env, n_genes = init_env(experiment_name, ENEMIES, 10)
-    POP_SIZE = 100_000
+    POP_SIZE = 50_000
     random_solutions = np.random.uniform(-1, 1, (POP_SIZE, n_genes))
     print(f"Population size: {POP_SIZE}")
 
