@@ -56,7 +56,7 @@ else:
 
 n_hidden_neurons = 10
 
-experiment_name = 'pymoo_sms_emoa_without_enemy_8'
+experiment_name = 'pymoo_static_objectives_with_8th_enemy'
 
 initialise_script(experiment_name=experiment_name, clean_folder=False)
 

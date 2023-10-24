@@ -34,7 +34,7 @@ MAX_EVALUATIONS = 50_000 + 200  # increase by 200 iterations more because we do 
 N_GENERATIONS = 10
 POP_SIZE = 20  # Subpopulation
 WHOLE_POP_SIZE = 100  # whole population
-enemies_list = [1, 2, 3, 4, 5, 6, 7]
+enemies_list = [1, 2, 3, 4, 5, 6, 7, 8]
 
 pmut, vsigma, pcross = 1, 1, 1  # Mutation probability, mutation strength, crossover probability
 crossovermode = "NN"  # NN or SBX
@@ -50,7 +50,7 @@ global ENEMIES
 global CLUSTER
 
 # Create experiment folder
-experiment_name = 'final_generalist_assignment1-7'
+experiment_name = 'pymoo_dynamic_objectives'
 initialise_script(experiment_name=experiment_name, clean_folder=False)
 Config.warnings['not_compiled'] = False
 
@@ -323,7 +323,7 @@ if __name__ == '__main__':
             print("\tOld Diversity of Subsample: ", np.mean(pdist(pop, metric="euclidean")))
 
             # Set enemies according to probabilities
-            beaten_vals = beaten3[0:len(enemies_list)]  # TODO: verify this bit when we run for 7 enemies
+            beaten_vals = beaten3[0:len(enemies_list)]
             if sum(beaten_vals) == 0:
                 probs = np.ones(len(enemies_list)) / len(enemies_list)
             else:
@@ -421,7 +421,6 @@ if __name__ == '__main__':
             index=False
         )
         # ("n_iter", "n_evals", "ind_id", "mean_fitness", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8")
-        # TODO: remove f8 when we run for 7 enemies
         df = pd.DataFrame(
             trial_datastore_secondary,
             columns=("n_iter", "n_evals", "ind_id", "mean_fitness", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8")
