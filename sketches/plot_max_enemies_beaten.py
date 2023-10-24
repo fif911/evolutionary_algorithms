@@ -18,13 +18,7 @@ from utils import read_solutions_from_file
 # plt.show()
 
 series_sets = pd.read_csv(
-    "../final_generalist_assignment/dynamic_objectives_5_94e231a0-2e4a-4af0-9c1e-dc5e12444655.csv")
-print(series_sets.shape)
-# f = [f'f{i}' for i in range(1, 9)]
-# agg = series_sets[f].aggregate(['mean'], axis=1)
-# agg_mean = series_sets[['n_gens', 'n_evals', 'ind_id']].join(agg)[['n_evals', 'mean']]
-# agg_max = agg_mean.groupby('n_evals').max().rename(columns={'mean': 'max'})
-# print()
+    "../final_generalist_assignment/dynamic_objectives_6_4da5ebff-a905-4352-a4df-5a1e4798c0fc.csv")
 series_sets['mean_obj'].to_numpy()
 array = np.array(series_sets['mean_obj']).reshape(int(series_sets.shape[0] / 20), 20)
 print(array.shape)
@@ -44,12 +38,16 @@ fitness_std = np.std(array, axis=1)
 # ax.legend()
 # plt.show()
 
-max_enemies_beaten_over_iterations = np.loadtxt(
-    "../final_generalist_assignment/max_enemies_beaten_5_94e231a0-2e4a-4af0-9c1e-dc5e12444655.txt")
-max_enemies_beaten_over_iterations = max_enemies_beaten_over_iterations.astype(int)
-print(max_enemies_beaten_over_iterations.shape)
-# duplicate the entries 20 time to match the number of iterations
-max_enemies_beaten_over_iterations = np.repeat(max_enemies_beaten_over_iterations, 9)
+# max_enemies_beaten_over_iterations = pd.read_csv(
+#     "../final_generalist_assignment/max_enemies_beaten_6_4da5ebff-a905-4352-a4df-5a1e4798c0fc.csv")
+#
+# max_enemies_beaten_over_iterations = max_enemies_beaten_over_iterations["max_enemies_beaten"].astype(int)
+# print(max_enemies_beaten_over_iterations.shape)
+# # duplicate the entries 20 time to match the number of iterations
+# max_enemies_beaten_over_iterations = np.repeat(max_enemies_beaten_over_iterations, 9)
+# # reset the index
+# max_enemies_beaten_over_iterations = max_enemies_beaten_over_iterations.reset_index(drop=True)
+# print(max_enemies_beaten_over_iterations.shape)
 
 # plot the max enemies beaten over iterations on right hand side and fitness on left hand side
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -60,8 +58,8 @@ ax.set_xlabel("Generation")
 ax.set_ylabel("Fitness")
 ax.set_title("Fitness per generation dynamic objectives algorithm")
 ax.legend()
-ax2 = ax.twinx()
-ax2.plot(max_enemies_beaten_over_iterations, label="Max enemies beaten", color="orange")
-ax2.set_ylabel("Max enemies beaten")
-ax2.legend()
+# ax2 = ax.twinx()
+# ax2.plot(max_enemies_beaten_over_iterations, label="Max enemies beaten", color="orange")
+# ax2.set_ylabel("Max enemies beaten")
+# ax2.legend()
 plt.show()

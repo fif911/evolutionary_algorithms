@@ -13,7 +13,7 @@ import time
 
 import numpy as np
 
-from demo_controller import player_controller, enemy_controller
+from player_controller import player_controller, enemy_controller
 from evoman.environment import Environment
 
 

@@ -11,7 +11,7 @@ import os
 # imports other libs
 import numpy as np
 
-from demo_controller import player_controller
+from player_controller import player_controller
 from evoman.environment import Environment
 
 experiment_name = 'controller_generalist_demo'

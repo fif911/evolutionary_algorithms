@@ -5,7 +5,7 @@ from typing import Optional, Callable
 import numpy as np
 from evoman.environment import Environment
 
-from demo_controller import player_controller
+from player_controller import player_controller
 
 
 def simulation(env: Environment, xm: np.ndarray, inverted_fitness=True, verbose=False,
