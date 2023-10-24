@@ -2,16 +2,9 @@ import numpy as np
 
 from pymoo.core.crossover import Crossover
 from pymoo.core.variable import Real, get
-from pymoo.util.misc import row_at_least_once_true
 
 
-def mut_binomial(n, m, prob, at_least_once=True):
-    # prob = np.ones(n) * prob
-    # M = np.random.random((n, m)) < prob[:, None]
-
-    # if at_least_once:
-    #     M = row_at_least_once_true(M)
-    # return M
+def nn_crossover(n):
     # Setting
     option = "hidden in, output in"
 
@@ -25,7 +18,7 @@ def mut_binomial(n, m, prob, at_least_once=True):
 
     # Binary Hidden Neurons
     bin_hiddens = np.random.randint(0, 2, (n, n_hidden))
-    for member in range(n): # Always at least one hidden neuron 1 for each member --> change proportion?
+    for member in range(n):  # Always at least one hidden neuron 1 for each member --> change proportion?
         if np.sum(bin_hiddens[member, :]) == 0:
             bin_hiddens[member, np.random.randint(0, n_hidden)] = 1
 
@@ -39,17 +32,19 @@ def mut_binomial(n, m, prob, at_least_once=True):
                 mating_pool[member, idx] = 1
                 if option == "hidden in and out":
                     # Outgoing weights of the hidden neuron
-                    idx2 = np.arange(n_inputs * n_hidden + n_hidden + 5 + (i * 5), n_inputs * n_hidden + n_hidden + 5 + ((i + 1) * 5), 1)
+                    idx2 = np.arange(n_inputs * n_hidden + n_hidden + 5 + (i * 5),
+                                     n_inputs * n_hidden + n_hidden + 5 + ((i + 1) * 5), 1)
                     mating_pool[member, idx2] = 1
 
         if option == "hidden in and out":
             # Final bias --> randomly one or zero
-            mating_pool[member, n_inputs * n_hidden + n_hidden:n_inputs * n_hidden + n_hidden + 5] = np.random.randint(0, 2, 5)
+            mating_pool[member, n_inputs * n_hidden + n_hidden:n_inputs * n_hidden + n_hidden + 5] = np.random.randint(
+                0, 2, 5)
 
         # Output neurons
         if option == "hidden in, output in":
             bin_output = np.random.randint(0, 2, (n, 5))
-            for member in range(n): # Always at least one output 1 for each member --> change proportion?
+            for member in range(n):  # Always at least one output 1 for each member --> change proportion?
                 if np.sum(bin_output[member, :]) == 0:
                     bin_output[member, np.random.randint(0, 5)] = 1
 
@@ -77,7 +72,7 @@ class NNCrossover(Crossover):
         _, n_mating_parents, n_genes = X.shape
 
         bias = get(self.bias, size=n_mating_parents)
-        M = mut_binomial(n_mating_parents, n_genes, bias, at_least_once=True)
+        M = nn_crossover(n_mating_parents)
 
         if self.n_offsprings == 1:
             Xp = X[0].copy(X)
@@ -88,6 +83,5 @@ class NNCrossover(Crossover):
             Xp[1][~M] = X[0][~M]
         else:
             raise Exception
-
 
         return Xp
