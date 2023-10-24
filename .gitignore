@@ -6,6 +6,9 @@ __pycache__/
 .vscode/
 .idea/
 outcmaes/
+.DS_Store
+pymoo/.DS_Store
+pymoo/operators/.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
